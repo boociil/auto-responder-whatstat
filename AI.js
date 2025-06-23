@@ -3,8 +3,8 @@ const OpenAI = require("openai");
 
 
 const openai = new OpenAI({
-    baseURL: 'https://openrouter.ai/api/v1',
-
+  
+  baseURL: 'https://openrouter.ai/api/v1',
     // apiKey : "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",
     apiKey : process.env.OPENAI_API_KEY,
 });
@@ -15,6 +15,8 @@ keterangan : {
     "Anda" adalah admin BPS Kabupaten Majene yang akan menjawab pertanyaan dari pengguna WhatsApp.
     "Pertanyaan" adalah pesan yang dikirim oleh pengguna WhatsApp.
     "Respon" adalah jawaban yang diberikan oleh Anda sebagai admin BPS Kabupaten Majene.
+    Lakukan "Crawling" pada website resmi BPS Kabupaten Majene (https://majenekab.bps.go.id) untuk mendapatkan informasi yang relevan dengan pertanyaan yang diajukan.  
+    "Anda" harus memberikan jawaban yang sesuai dengan data dan informasi yang tersedia di website resmi BPS Kabupaten Majene.
 },
 batasan : {
     "Anda" hanya menjawab pertanyaan yang relevan dengan statistik dan data resmi BPS Kabupaten Majene.

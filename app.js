@@ -9,6 +9,29 @@ app.use(bodyParser.json());
 
 const {getAIRespond} = require('./AI.js'); // Import fungsi sendPrompt dari AI.js
 
+const {announcePagi, announceSore} = require('./siakip-announcer.js'); // Import fungsi announcePagi dan announceSore dari siakip-announcer.js
+
+const cron = require('node-cron');
+
+// Menjadwalkan fungsi announceSore setiap hari jam 16:30
+// announceSore();
+
+cron.schedule('45 15 * * 1-4', () => {
+  announceSore();
+  console.log('announceSore dijalankan jam 15:45');
+}, { timezone: "Asia/Makassar" });
+
+cron.schedule('15 16 * * 5', () => {
+  announceSore();
+  console.log('announceSore dijalankan jam 16:15');
+}, { timezone: "Asia/Makassar" });
+
+cron.schedule('0 8 * * 1-5', () => {
+  announcePagi();
+  console.log('Pagi dijalankan jam 08:00');
+}, { timezone: "Asia/Makassar" });
+
+// announceSore();
 
 /////////////////////// END OF SETUP LIBRARY
 
@@ -173,6 +196,7 @@ function isJamLayanan() {
 
   // return false;
 }
+
 const petugas = [
   {nama : "Ryan", phone : "6282246657077"},
   {nama : "Harris", phone : "6281241157987"},
@@ -216,7 +240,7 @@ const processingQueue = () => {
 
 // Webhook Wablas *DeepSeek
 app.post('/webhook', async (req, res) => {
-  const { phone, message, isFromMe, pushName } = req.body;
+  const { phone, message, isFromMe, pushName, isGroup } = req.body;
   const msg = message.toLowerCase();
 
   // Queue
@@ -227,12 +251,12 @@ app.post('/webhook', async (req, res) => {
   console.log('Incoming message:', req.body);
   const foundUser = listMessage.find(user => user.noTelp === phone);
 
-  if (isFromMe || (foundUser && foundUser.hasOwnProperty("isCS")) ) {
+  if (isFromMe || isGroup || (foundUser && foundUser.hasOwnProperty("isCS")) ) {
     if (msg.includes("terimakasih sudah")){
       akhiriChat(phone)
     }
     
-    console.log("Abaikan pesan dari nomor sendiri atau ada property");
+    console.log("Abaikan pesan dari nomor sendiri atau ada property atau dari group");
     console.log(listMessage);
     return res.sendStatus(200);
   }
@@ -276,7 +300,9 @@ app.post('/webhook', async (req, res) => {
 
   if (message) {
     if (openingWord.includes(msg)) {
-
+      if (!foundUser) {
+        // Jika user belum ada dalam listMessage, maka akan ditambahkan
+        console.log("User belum ada dalam listMessage, menambahkan user baru");
         listMessage.push(
           {
             nama : pushName,
@@ -287,7 +313,10 @@ app.post('/webhook', async (req, res) => {
 
         chatId = chatId + 1;
 
-      await kirimListMessageMenu(phone, pushName);
+        await kirimListMessageMenu(phone, pushName);
+      }else{
+
+      }
 
 
     }else if (msg === 'assalamualaikum' || msg === "asalamual'alaikum" || msg === 'aslm' || msg === 'aslmlkm' || msg === 'assalamualaikum wr wb' || msg === 'assalamualaikum wr wb' || msg === 'assalamualaikum wr.wb' || msg === 'ass') {
