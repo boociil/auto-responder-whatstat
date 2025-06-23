@@ -9,19 +9,21 @@ app.use(bodyParser.json());
 
 const {getAIRespond} = require('./AI.js'); // Import fungsi sendPrompt dari AI.js
 
-const {announcePagi, announceSore} = require('./siakip-announcer.js'); // Import fungsi announcePagi dan announceSore dari siakip-announcer.js
+const {announcePagi, announceSore, test} = require('./siakip-announcer.js'); // Import fungsi announcePagi dan announceSore dari siakip-announcer.js
 
 const cron = require('node-cron');
 
 // Menjadwalkan fungsi announceSore setiap hari jam 16:30
 // announceSore();
 
-// ENZjtha2fAMzFaVGsfTfahorBqUJonRhzr3OkA4y8kI
 
 cron.schedule('45 15 * * 1-4', () => {
   announceSore();
   console.log('announceSore dijalankan jam 15:45');
 }, { timezone: "Asia/Makassar" });
+
+// test();
+// console.log('announceSore kedua dijalankan jam 18:00');
 
 cron.schedule('0 18 * * 1-5', () => {
   announceSore();

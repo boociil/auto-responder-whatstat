@@ -1,4 +1,5 @@
 const WABLAS_TOKEN = process.env.WABLAS_TOKEN;
+const WABLAS_SECRET = process.env.WABLAS_SECRET;
 const WABLAS_URL = 'https://texas.wablas.com/api/v2/send-message'; // endpoint v2 untuk support listMessage
 const WABLAS_LIST_URL = 'https://texas.wablas.com/api/v2/send-list'; // endpoint v2 untuk support listMessage
 // const WABLAS_GROUP_URL = 'https://texas.wablas.com/api/v2/group/text'; // endpoint v2 untuk support groupMessage
@@ -22,7 +23,8 @@ const kirimPesan = async (phone, message) => {
       }, {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': WABLAS_TOKEN
+          'Authorization': WABLAS_TOKEN + "." + WABLAS_SECRET,
+
         }
       });
     } catch (error) {
@@ -51,7 +53,7 @@ const kirimPesanGroup = async (groupId, message) => {
     }, {
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': WABLAS_TOKEN
+        'Authorization': WABLAS_TOKEN + "." + WABLAS_SECRET,
       }
     });
   } catch (error) {

@@ -31,8 +31,7 @@ const announcePagi = async () => {
 
                 item.map(item => {
                     if (item.pelaksana_username == user.username){
-                        // console.log("pelaksana" , item.pelaksana_username);
-                        // console.log("user", user.username);
+                        
                         tidak_aman = false;
                     }
                 });
@@ -92,7 +91,6 @@ const announceSore = () => {
             let user_problem = [];
             let pekerjaan_blm_selesai = [];
             let bukti_dukung_kosong = [];
-            // const foundUser = listMessage.find(user => user.noTelp === phone);
             
             user.map(u => {
                 // console.log(user.username);
@@ -163,6 +161,12 @@ const announceSore = () => {
         });
 }
 
+const test = () => {
+    kirimPesan("6282246657077", "test pesan");
+    console.log("test dikirim");
+    
+}
+
 module.exports = {
-    announcePagi, announceSore
+    announcePagi, announceSore, test
 };
