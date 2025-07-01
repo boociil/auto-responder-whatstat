@@ -1,5 +1,11 @@
 require('dotenv').config();
 const OpenAI = require("openai");
+const fs = require('fs');
+const pdfParse = require('pdf-parse');
+const { RecursiveCharacterTextSplitter } = require('langchain/text_splitter');
+// const { OpenAIEmbeddings } = require('langchain/embeddings/openai');
+const {MemoryVectorStore} = require('langchain/vectorstores/memory')
+const { OpenAIEmbeddings, ChatOpenAI } = require('@langchain/openai');
 
 
 const openai = new OpenAI({
@@ -38,24 +44,49 @@ format : {
 const prompt2 = `
     dengan informasi tambahan sumber pencarian google dan web BPS Majene di link (https://majenekab.bps.go.id/), jawablah pesan berikut sebagai admin BPS Kabupaten Majene dengan ramah maksimal 30 kata.
 `
+const pdfBuffer = fs.readFileSync('./pdf/mda2025.pdf');
 
 async function sendPrompt(reqData, idUser) {
-  const completion = await openai.chat.completions.create({
-    messages: [
-      { role: "system", content: prompt },
-      { role: "user", content: `${reqData}`}
-    ],
-    model: "deepseek/deepseek-chat-v3-0324:free",
+  const pdfData = await pdfParse(pdfBuffer);
+  const splitter = new RecursiveCharacterTextSplitter({
+    chunkSize: 1000,
+    chunkOverlap: 200,
+  });
+  const splitDocs = await splitter.createDocuments([pdfData.text]);
+
+  console.log(splitDocs);
+
+  const embeddings = new OpenAIEmbeddings({
+    baseURL: 'https://openrouter.ai/api/v1',
+    // apiKey : "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",
+    apiKey : process.env.OPENAI_API_KEY,
   });
 
-  // Tambahkan pengecekan dan log
-  if (!completion.choices || !completion.choices[0]) {
-    console.error('AI API response error:', completion);
-    throw new Error('AI API response invalid');
-  }
+  const vectorStore = await MemoryVectorStore.fromDocuments(splitDocs, embeddings);
 
-  console.log(completion.choices[0].message.content);
-  return completion.choices[0].message.content;
+  const chain = RetrievalQAChain.fromLLM(openai, vectorStore.asRetriever());
+
+  const result = await chain.call({
+    query: 'Apa isi utama dari PDF ini?',
+  });
+  
+  // const completion = await openai.chat.completions.create({
+  //   messages: [
+  //     { role: "system", content: prompt },
+  //     { role: "user", content: `${reqData}`}
+  //   ],
+  //   model: "deepseek/deepseek-chat-v3-0324:free",
+  // });
+
+  // // Tambahkan pengecekan dan log
+  // if (!completion.choices || !completion.choices[0]) {
+  //   console.error('AI API response error:', completion);
+  //   throw new Error('AI API response invalid');
+  // }
+
+  // console.log(completion.choices[0].message.content);
+  // return completion.choices[0].message.content;
+  return result.text
 }
 
 module.exports = {

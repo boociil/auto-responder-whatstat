@@ -1,21 +1,23 @@
 const axios = require('axios');
 const {kirimPesan, kirimPesanGroup} = require('./message.js');
 
-const group_bocah_id = "6282344852209-1476837342"
+const group_bocah_id = process.env.GROUP_ID
 
 const announcePagi = async () => {
     const url = process.env.SIAKIP_API_URL;
 
+    const bulan = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
+
     const date = new Date();
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const month = String(date.getMonth()).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
-    const formattedDate = `${year}-${month}-${day}`;
+    const formattedDate = `${day} ${bulan[month]} ${year}`;
 
     const params = {
         "satuan_kerja_tahun_id" : "52ec8800-c0d8-11ef-83fe-29d37685f42e",
         "tanggal" : formattedDate,
-    };
+    }; 
 
     axios.post(url, params)
         .then(response => {
@@ -45,16 +47,20 @@ const announcePagi = async () => {
 
             if (user_problem.length != 0) {
                 pesan = `
-                    *EVALUASI SIAKIP*\nSelamat pagi😄\nBerikut merupakan daftar pegawai yang belum mengisi SIAKIP pada Pagi Hari ini pada tanggal ${formattedDate} :
+                    *EVALUASI SIAKIP*\nSelamat pagi😄\nBerikut merupakan daftar pegawai yang belum mengisi SIAKIP pada pagi hari ini pada tanggal ${formattedDate} :
                 `;
 
                 for (let i = 0; i < user_problem.length; i++) {
-                    pesan += `\n- *${user_problem[i]}*\n`;
+                    if (i==0){
+                        pesan += `\n- *${user_problem[i]}*\n`;
+                    }else{
+                        pesan += `- *${user_problem[i]}*\n`;
+                    }
                 }
 
             }else{
                 pesan = `
-                    Selamat pagi, Terimakasih semua pegawai sudah mengisi SIAKIP pada Pagi Hari ini, semangat dan tetap produktif 💪😄
+                    Selamat pagi, Terimakasih semua pegawai sudah mengisi SIAKIP pada pagi hari ini, semangat dan tetap produktif 💪😄
                 `;
             }
             
@@ -64,8 +70,13 @@ const announcePagi = async () => {
             
         })
         .catch(error => {
-            console.error('Error sending data:', error);
+            console.error('Error req data:', error);
         });
+}
+
+const alertSore = () => {
+    const pesan = `*PENGINGAT SIAKIP*\nSelamat sore bapak ibu sekalian, jangan lupa untuk menyelesaikan kegiatan yang dilaksanakan pada hari ini serta mengupload bukti dukungnya ya, terimakasih😁`
+    kirimPesanGroup(group_bocah_id, pesan);
 }
 
 const announceSore = () => {
@@ -157,7 +168,7 @@ const announceSore = () => {
             
         })
         .catch(error => {
-            console.error('Error sending data:', error);
+            console.error('Error req data:', error);
         });
 }
 
@@ -168,5 +179,5 @@ const test = () => {
 }
 
 module.exports = {
-    announcePagi, announceSore, test
+    announcePagi, announceSore, test, alertSore
 };

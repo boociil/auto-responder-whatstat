@@ -4,43 +4,58 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const axios = require('axios');
 
+const { databaseAddUser, databaseAddDataLayanan, databasePushChat } = require('./db.js')
+
 const app = express();
 app.use(bodyParser.json());
 
 const {getAIRespond} = require('./AI.js'); // Import fungsi sendPrompt dari AI.js
 
-const {announcePagi, announceSore, test} = require('./siakip-announcer.js'); // Import fungsi announcePagi dan announceSore dari siakip-announcer.js
+const {announcePagi, announceSore, test, alertSore} = require('./siakip-announcer.js'); // Import fungsi announcePagi dan announceSore dari siakip-announcer.js
 
 const cron = require('node-cron');
 
 // Menjadwalkan fungsi announceSore setiap hari jam 16:30
+// announcePagi();
+
+
 // announceSore();
 
-
-cron.schedule('45 15 * * 1-4', () => {
-  announceSore();
-  console.log('announceSore dijalankan jam 15:45');
+// SOREEE
+cron.schedule('30 15 * * 1-4', () => {
+  // announceSore();
+  alertSore();
+  console.log('Alert Sore dijalankan jam 15:30');
 }, { timezone: "Asia/Makassar" });
 
-// test();
-// console.log('announceSore kedua dijalankan jam 18:00');
-
-cron.schedule('0 18 * * 1-5', () => {
+cron.schedule('0 16 * * 1-4', () => {
   announceSore();
-  console.log('announceSore kedua dijalankan jam 18:00');
+  console.log('Announce Sore dijalankan pada pukul 16.00');
 }, { timezone: "Asia/Makassar" });
 
-cron.schedule('15 16 * * 5', () => {
-  announceSore();
-  console.log('announceSore dijalankan jam 16:15');
+cron.schedule('0 16 * * 5', () => {
+  // announceSore();
+  alertSore();
+  console.log('announceSore dijalankan jam 16.00');
 }, { timezone: "Asia/Makassar" });
+
+cron.schedule('30 16 * * 5', () => {
+  announceSore();
+  console.log('Test Node Cron 16.00');
+}, { timezone: "Asia/Makassar" });
+
+// PAGIII
 
 cron.schedule('0 8 * * 1-5', () => {
   announcePagi();
-  console.log('Pagi dijalankan jam 08:00');
+  console.log('Announce Pagi dijalankan pada pukul 08:00');
 }, { timezone: "Asia/Makassar" });
 
-// announceSore();
+cron.schedule('0 9 * * 1-5', () => {
+  announcePagi();
+  console.log('Announce Pagi dijalankan pada pukul 09:00');
+}, { timezone: "Asia/Makassar" });
+
 
 /////////////////////// END OF SETUP LIBRARY
 
@@ -48,6 +63,7 @@ cron.schedule('0 8 * * 1-5', () => {
 const WABLAS_TOKEN = process.env.WABLAS_TOKEN;
 const WABLAS_URL = 'https://texas.wablas.com/api/v2/send-message'; // endpoint v2 untuk support listMessage
 const WABLAS_LIST_URL = 'https://texas.wablas.com/api/v2/send-list'; // endpoint v2 untuk support listMessage
+const WABLAS_SECRET = process.env.WABLAS_SECRET;
 
 // Message
 const messageEnd = `*Terimakasih*😁🙏🏻  sudah menggunakan layanan WhatStat, Jika ada pertanyaan atau butuh bantuan terkait data statistik Kabupaten Majene, jangan ragu hubungi kami. 😊 Kunjungi website BPS Majene di https://majenekab.bps.go.id/ untuk info terbaru!  Ohiya, untuk meningkatkan layanan kami, mohon bantuan untuk mengisi Survei kebutuhan data ya😌🙏🏻 \n\nBisa diakses pada link berikut : \n https://s.bps.go.id/SKD7601`
@@ -56,7 +72,21 @@ const messageEnd = `*Terimakasih*😁🙏🏻  sudah menggunakan layanan WhatSta
 const listMessage = []
 
 // Const kata kata sapaan
-const openingWord = ["halo", "selamat pagi", "selamat pagi bps","hallo", "hai" , "menu", "woi", "ass", "aslmlkm", "aslm", "tes", "test", "tabe", "menu","oi","p", "pp","pppppp","oiiiii","oyyyy","permisi","saya mau tanya","mau tanya","tanya","nanya"]
+const openingWord = ["halo", "selamat", "pagi", "sore","malam","hi", "selamat pagi bps","hallo", "hai" , "menu", "woi", "ass", "aslmlkm", "aslm", "tes", "test", "tabe", "menu","oi","p", "pp","pppppp","oiiiii","oyyyy","permisi","saya mau tanya","mau tanya","tanya","nanya"]
+
+const cekIsSalamPembuka = (msg) => {
+  const listMsg = msg.split(" ");
+  console.log("list msg", listMsg);
+  
+  for(i = 0;i < listMsg.length; i++){
+    if (openingWord.includes(listMsg[i])){
+      console.log("salam pembuka : true");
+      
+      return true;
+    }
+  }
+  return false;
+}
 
 let chatId = 0;
 
@@ -120,7 +150,7 @@ const kirimListMenuPetugas = async (phone, namaPetugas, layanan, namaTamu, phone
     }, {
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': WABLAS_TOKEN
+        'Authorization': WABLAS_TOKEN + "." + WABLAS_SECRET
       }
     });
   } catch (error) {
@@ -155,7 +185,7 @@ const kirimListMessageMenu = async (phone, nama) => {
     }, {
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': WABLAS_TOKEN
+        'Authorization': WABLAS_TOKEN + "." + WABLAS_SECRET
       }
     });
   } catch (error) {
@@ -179,7 +209,7 @@ const kirimPesan = async (phone, message) => {
       }, {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': WABLAS_TOKEN
+          'Authorization': WABLAS_TOKEN + "." + WABLAS_SECRET
         }
       });
     } catch (error) {
@@ -208,7 +238,7 @@ function isJamLayanan() {
 
 const petugas = [
   {nama : "Ryan", phone : "6282246657077"},
-  {nama : "Harris", phone : "6281241157987"},
+  {nama : "Haris", phone : "6282246657077"},
   {nama : "Maya", phone : "6285804357544"},
 ]
 
@@ -264,6 +294,15 @@ app.post('/webhook', async (req, res) => {
     if (msg.includes("terimakasih sudah")){
       akhiriChat(phone)
     }
+
+    if (foundUser.hasOwnProperty("isCS")){
+      if (!foundUser.hasOwnProperty("chat")){
+        foundUser.chat = []
+      }
+
+      const msgPush = `${isFromMe ? "whatstat : " : "cleint : "}${msg} `
+      foundUser.chat.push(msgPush);
+    }
     
     console.log("Abaikan pesan dari nomor sendiri atau ada property atau dari group");
     console.log(listMessage);
@@ -291,11 +330,13 @@ app.post('/webhook', async (req, res) => {
 
         }
       }else if (generateMsg.title === 'akhiri, sesi telah berakhir'){
-        // const userEnd = listMessage.find(user => user.noTelp === phoneTamu);
+        const userEnd = listMessage.find(user => user.noTelp === phoneTamu);
         // userEnd.isCS = false;
-        await kirimPesan(phoneTamu, `Baik ${namaTamu}, Terimakasih sudah menghubungi Whatstat, saya ${namaPetugas} izin mengakhiri sesi ini, terimakasih.🙏🏻`);
+        databasePushChat(userEnd.dbId, userEnd.chat)
+        await kirimPesan(phoneTamu, `Baik ${namaTamu}, Terimakasih sudah menghubungi Whatstat, saya ${namaPetugas} sebagai petugas PST izin mengakhiri sesi ini, terimakasih.🙏🏻`);
         akhiriChat(phoneTamu);
       }
+      return;
     }
   }
 
@@ -308,34 +349,8 @@ app.post('/webhook', async (req, res) => {
   
 
   if (message) {
-    if (openingWord.includes(msg)) {
-      if (!foundUser) {
-        // Jika user belum ada dalam listMessage, maka akan ditambahkan
-        console.log("User belum ada dalam listMessage, menambahkan user baru");
-        listMessage.push(
-          {
-            nama : pushName,
-            noTelp : phone,
-            chatId : chatId + 1,
-          }
-        )
-
-        chatId = chatId + 1;
-
-        await kirimListMessageMenu(phone, pushName);
-      }else{
-
-      }
-
-
-    }else if (msg === 'assalamualaikum' || msg === "asalamual'alaikum" || msg === 'aslm' || msg === 'aslmlkm' || msg === 'assalamualaikum wr wb' || msg === 'assalamualaikum wr wb' || msg === 'assalamualaikum wr.wb' || msg === 'ass') {
-      await kirimListMessageMenu(phone, pushName);
-
-    } else {
-      // Chek apakah user ada dalam listMessage
-      // Jika tidak, maka kata tidak dikenal
-      if(foundUser){
-        if (foundUser.layanan){
+    if (foundUser){
+      if (foundUser.layanan){
           if (foundUser.layanan == '1'){
             if (foundUser.namaLengkap){
               if (foundUser.email){
@@ -346,6 +361,12 @@ app.post('/webhook', async (req, res) => {
                     notifPetugas(foundUser.namaLengkap, foundUser.instansi, "Konsultasi", foundUser.dataYangDibutuhkan, phone);
                     await kirimPesan(phone, 'Terimakasih, anda akan segera dihubungkan ke petugas kami');
                     foundUser.isCS = true;
+
+                    const time = new Date()
+
+                    const dbId = databaseAddDataLayanan(foundUser.layanan, foundUser.dataYangDibutuhkan, phone, time);
+                    foundUser.dbId = dbId
+
                     return;
 
                   }else{
@@ -399,6 +420,7 @@ app.post('/webhook', async (req, res) => {
               foundUser.instansi = instansi;
               if (isValidEmail(email)){
                 foundUser.email = email;
+                databaseAddUser(pushName, phone, foundUser.namaLengkap, foundUser.email, foundUser.instansi);
                 await kirimPesan(phone, 'Silahkan masukkan data yang anda butuhkan atau sampaikan keluhan anda terkait data statistik.');
               }else{
                 await kirimPesan(phone, 'Mohon maaf, email yang anda masukkan tidak valid, silahkan masukkan email dengan format yang benar. ');
@@ -519,9 +541,10 @@ app.post('/webhook', async (req, res) => {
               // foundUser.email = email;
             }
           }
-        }else{
-        // Jika user belum memilih layanan, maka akan di parsing
-          console.log("Parsing pesan masuk");
+      }else{
+      // Jika user belum memilih layanan, maka akan di parsing
+        console.log("Parsing pesan masuk");
+        if (msg.includes('<~')){
           const generateMsg = parseListString(msg);
           console.log("gmsg", generateMsg);
           
@@ -529,7 +552,7 @@ app.post('/webhook', async (req, res) => {
             if (generateMsg.title === 'konsultasi statistik'){
               foundUser.layanan = 1;
               await kirimPesan(phone, `
-   Mohon bantuan anda untuk mengisi form data diri.             
+    Mohon bantuan anda untuk mengisi form data diri.             
                     `);
                 await kirimPesan(phone, `
   Nama : \nEmail : \nInstansi : \n
@@ -538,7 +561,7 @@ app.post('/webhook', async (req, res) => {
             }else if (generateMsg.title === 'pengaduan terkait layanan'){
                   foundUser.layanan = 2;
                   await kirimPesan(phone, `
-       Mohon bantuan anda untuk mengisi form data diri.             
+        Mohon bantuan anda untuk mengisi form data diri.             
                         `);
                     await kirimPesan(phone, `
       Nama : \nEmail : \nInstansi : \n
@@ -560,17 +583,47 @@ app.post('/webhook', async (req, res) => {
             } else if (generateMsg.title === 'lainnya'){ 
               foundUser.layanan = 4;
               await kirimPesan(phone, `
-   Mohon bantuan anda untuk mengisi form data diri.             
+    Mohon bantuan anda untuk mengisi form data diri.             
                     `);
                 await kirimPesan(phone, `
   Nama : \nEmail : \nInstansi : \n
                   `);
             }
-
+  
           }
         }
-      }else{
-        // await kirimPesan(phone, `Mohon maaf, kata yang anda masukan belum tercakup pada sistem automasi kami🙏🏻\nJika anda ingin menghubungi *WhatStat* silahkan menggunakan kata "Halo", "Hai", "Assalamualaikum" atau kata sapaan lainnya.`);
+      }
+    }else{
+
+      if (cekIsSalamPembuka(msg)) {
+        if (!foundUser) {
+          // Jika user belum ada dalam listMessage, maka akan ditambahkan
+          console.log("User belum ada dalam listMessage, menambahkan user baru");
+
+          // DATABASE
+          databaseAddUser(pushName, phone);
+
+          listMessage.push(
+            {
+              nama : pushName,
+              noTelp : phone,
+              chatId : chatId + 1,
+            }
+          )
+
+          chatId = chatId + 1;
+
+          await kirimListMessageMenu(phone, pushName);
+        }else{
+
+        }
+
+
+      }else if (msg === 'assalamualaikum' || msg === "asalamual'alaikum" || msg === 'aslm' || msg === 'aslmlkm' || msg === 'assalamualaikum wr wb' || msg === 'assalamualaikum wr wb' || msg === 'assalamualaikum wr.wb' || msg === 'ass') {
+        await kirimListMessageMenu(phone, pushName);
+
+      } else {
+        
       }
     }
   }
@@ -587,6 +640,7 @@ app.get('/', (req, res) => {
 app.post('/test-api', async (req,res) => {
   
  
+  console.log("test");
   
   msg = "jumlah penduduk majene 2024";
   chatId = 1;
