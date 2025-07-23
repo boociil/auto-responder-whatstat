@@ -10,9 +10,10 @@ const announcePagi = async () => {
 
     const date = new Date();
     const year = date.getFullYear();
-    const month = String(date.getMonth()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
-    const formattedDate = `${day} ${bulan[month]} ${year}`;
+    const formattedDateshow = `${day} ${bulan[month-1]} ${year}`;
+    const formattedDate = `${year}-${month}-${day} `;
 
     const params = {
         "satuan_kerja_tahun_id" : "52ec8800-c0d8-11ef-83fe-29d37685f42e",
@@ -47,7 +48,7 @@ const announcePagi = async () => {
 
             if (user_problem.length != 0) {
                 pesan = `
-                    *EVALUASI SIAKIP*\nSelamat pagi😄\nBerikut merupakan daftar pegawai yang belum mengisi SIAKIP pada pagi hari ini pada tanggal ${formattedDate} :
+                    *EVALUASI SIAKIP*\nSelamat pagi😄\nBerikut merupakan daftar pegawai yang belum mengisi SIAKIP pada pagi hari ini pada tanggal ${formattedDateshow} :
                 `;
 
                 for (let i = 0; i < user_problem.length; i++) {
@@ -82,11 +83,15 @@ const alertSore = () => {
 const announceSore = () => {
     const url = process.env.SIAKIP_API_URL;
 
+    const bulan = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
+
     const date = new Date();
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
-    const formattedDate = `${year}-${month}-${day}`;
+    const formattedDateshow = `${day} ${bulan[month-1]} ${year}`;
+    const formattedDate = `${year}-${month}-${day} `;
+
 
     const body = {
         "satuan_kerja_tahun_id" : "52ec8800-c0d8-11ef-83fe-29d37685f42e",
@@ -133,7 +138,7 @@ const announceSore = () => {
 
             if (pekerjaan_blm_selesai.length != 0 && bukti_dukung_kosong.length != 0) {
                 pesan = `
-                    *EVALUASI SIAKIP*\nSelamat sore 😄\nBerikut merupakan daftar pegawai yang belum menyelesaikan pekerjaan di SIAKIP pada sore hari ini pada tanggal ${formattedDate} :
+                    *EVALUASI SIAKIP*\nSelamat sore 😄\nBerikut merupakan daftar pegawai yang belum menyelesaikan pekerjaan di SIAKIP pada sore hari ini pada tanggal ${formattedDateshow} :
                 `;
 
                 for (let i = 0; i < pekerjaan_blm_selesai.length; i++) {
@@ -156,6 +161,8 @@ const announceSore = () => {
                         }
                     }
                 }
+
+                pesan += `\nJangan lupa absen yaa😉`
 
             }else{
                 pesan = `

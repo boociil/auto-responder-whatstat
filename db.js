@@ -62,7 +62,7 @@ const databaseAddDataLayanan = async (layanan,data,notelp,time) => {
         }
     })
 
-    return getuser.id;
+    return addDataLayanan.id;
 }
 
 const databasePushChat = async (id,chat) => {

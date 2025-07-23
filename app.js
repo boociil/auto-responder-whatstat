@@ -15,12 +15,6 @@ const {announcePagi, announceSore, test, alertSore} = require('./siakip-announce
 
 const cron = require('node-cron');
 
-// Menjadwalkan fungsi announceSore setiap hari jam 16:30
-// announcePagi();
-
-
-// announceSore();
-
 // SOREEE
 cron.schedule('30 15 * * 1-4', () => {
   // announceSore();
@@ -45,7 +39,7 @@ cron.schedule('30 16 * * 5', () => {
 }, { timezone: "Asia/Makassar" });
 
 // PAGIII
-
+// announcePagi();
 cron.schedule('0 8 * * 1-5', () => {
   announcePagi();
   console.log('Announce Pagi dijalankan pada pukul 08:00');
@@ -238,7 +232,7 @@ function isJamLayanan() {
 
 const petugas = [
   {nama : "Ryan", phone : "6282246657077"},
-  {nama : "Haris", phone : "6282246657077"},
+  {nama : "Haris", phone : "6281241157987"},
   {nama : "Maya", phone : "6285804357544"},
 ]
 
@@ -250,7 +244,8 @@ const notifPetugas = async (nama, instansi, layanan, detail, phoneTamu) => {
   console.log(petugas[bulanSekarang % 3].phone, petugas[bulanSekarang % 3].nama, layanan, nama, phoneTamu, instansi, detail);
   
   // await kirimPesan(petugas[bulanSekarang % 3].phone, `Halo ${petugas[bulanSekarang % 3].nama}, ada tamu ${layanan} nih, namanya ${nama} dari ${instansi}, detailnya : ${detail}`);
-  await kirimListMenuPetugas(petugas[bulanSekarang % 3].phone, petugas[bulanSekarang % 3].nama, layanan, nama, phoneTamu, instansi, detail);
+  // await kirimListMenuPetugas(petugas[bulanSekarang % 3].phone, petugas[bulanSekarang % 3].nama, layanan, nama, phoneTamu, instansi, detail);
+  await kirimListMenuPetugas(petugas[0].phone, petugas[0].nama, layanan, nama, phoneTamu, instansi, detail);
   console.log(`Notifikasi dikirim ke ${petugas[bulanSekarang % 3].nama} (${petugas[bulanSekarang % 3].phone}) untuk layanan ${layanan} dari ${nama} (${instansi}) (${phoneTamu}) dengan detail: ${detail}`);
 }
 
@@ -300,7 +295,7 @@ app.post('/webhook', async (req, res) => {
         foundUser.chat = []
       }
 
-      const msgPush = `${isFromMe ? "whatstat : " : "cleint : "}${msg} `
+      const msgPush = `${isFromMe ? "whatstat : " : "client : "}${msg} `
       foundUser.chat.push(msgPush);
     }
     
@@ -311,13 +306,13 @@ app.post('/webhook', async (req, res) => {
 
   const isPetugas = petugas.find(p => p.phone === phone);
   if (isPetugas) {
-    const generateMsg = parseListString(msg);
-    const namaPetugas = isPetugas.nama;
-    // const [phoneTamu, namaTamu, namaPetugas] = generateMsg.description.split(';');
-    // await kirimPesan(phoneTamu, `Halo *${namaTamu}*, saya ${namaPetugas}, mohon berkenan untuk menunggu sembari saya mengecek data yang anda butuhkan.`);
-    // return res.sendStatus(200);
     
+    if(msg.includes('<~')){
+
+    }
+    const generateMsg = parseListString(msg);
     if (generateMsg.menu === 'menu petugas'){
+      
       console.log("gmsg", generateMsg);
       const [phoneTamu, namaTamu, namaPetugas] = generateMsg.description.split(';');
       
@@ -332,7 +327,8 @@ app.post('/webhook', async (req, res) => {
       }else if (generateMsg.title === 'akhiri, sesi telah berakhir'){
         const userEnd = listMessage.find(user => user.noTelp === phoneTamu);
         // userEnd.isCS = false;
-        databasePushChat(userEnd.dbId, userEnd.chat)
+        console.log(userEnd.dbId, userEnd.chat);
+        databasePushChat(userEnd.dbId, JSON.stringify(userEnd.chat))
         await kirimPesan(phoneTamu, `Baik ${namaTamu}, Terimakasih sudah menghubungi Whatstat, saya ${namaPetugas} sebagai petugas PST izin mengakhiri sesi ini, terimakasih.🙏🏻`);
         akhiriChat(phoneTamu);
       }
@@ -362,9 +358,9 @@ app.post('/webhook', async (req, res) => {
                     await kirimPesan(phone, 'Terimakasih, anda akan segera dihubungkan ke petugas kami');
                     foundUser.isCS = true;
 
-                    const time = new Date()
+                    const time = new Date();
 
-                    const dbId = databaseAddDataLayanan(foundUser.layanan, foundUser.dataYangDibutuhkan, phone, time);
+                    const dbId = await databaseAddDataLayanan(foundUser.layanan, foundUser.dataYangDibutuhkan, phone, time);
                     foundUser.dbId = dbId
 
                     return;
@@ -496,6 +492,11 @@ app.post('/webhook', async (req, res) => {
             if (foundUser.namaLengkap){
               if (foundUser.email){
                 console.log("4:",phone, foundUser.namaLengkap, foundUser.instansi, foundUser.noTelp);
+
+                const time = new Date();
+                const dbId = await databaseAddDataLayanan(foundUser.layanan, "-", phone, time);
+                foundUser.dbId = dbId
+
                 notifPetugas(foundUser.namaLengkap, foundUser.instansi, "Lainnya", "-", phone);
                 await kirimPesan(phone, 'Terimakasih, anda akan segera dihubungkan ke Petugas kami, mohon tunggu sebentar.');
                 foundUser.isCS = true;
@@ -595,36 +596,50 @@ app.post('/webhook', async (req, res) => {
       }
     }else{
 
-      if (cekIsSalamPembuka(msg)) {
-        if (!foundUser) {
-          // Jika user belum ada dalam listMessage, maka akan ditambahkan
-          console.log("User belum ada dalam listMessage, menambahkan user baru");
+      await kirimListMessageMenu(phone, pushName);
+      databaseAddUser(pushName, phone);
 
-          // DATABASE
-          databaseAddUser(pushName, phone);
-
-          listMessage.push(
-            {
-              nama : pushName,
-              noTelp : phone,
-              chatId : chatId + 1,
-            }
-          )
-
-          chatId = chatId + 1;
-
-          await kirimListMessageMenu(phone, pushName);
-        }else{
-
+      listMessage.push(
+        {
+          nama : pushName,
+          noTelp : phone,
+          chatId : chatId + 1,
         }
+      )
+
+      chatId = chatId + 1;
+
+      // if (cekIsSalamPembuka(msg)) {
+      //   if (!foundUser) {
+      //     // Jika user belum ada dalam listMessage, maka akan ditambahkan
+      //     console.log("User belum ada dalam listMessage, menambahkan user baru");
+
+      //     // DATABASE
+      //     databaseAddUser(pushName, phone);
+
+      //     listMessage.push(
+      //       {
+      //         nama : pushName,
+      //         noTelp : phone,
+      //         chatId : chatId + 1,
+      //       }
+      //     )
+
+      //     chatId = chatId + 1;
+
+      //     await kirimListMessageMenu(phone, pushName);
+      //   }else{
+
+      //   }
 
 
-      }else if (msg === 'assalamualaikum' || msg === "asalamual'alaikum" || msg === 'aslm' || msg === 'aslmlkm' || msg === 'assalamualaikum wr wb' || msg === 'assalamualaikum wr wb' || msg === 'assalamualaikum wr.wb' || msg === 'ass') {
-        await kirimListMessageMenu(phone, pushName);
-
-      } else {
+      // }else if (msg === 'assalamualaikum' || msg === "asalamual'alaikum" || msg === 'aslm' || msg === 'aslmlkm' || msg === 'assalamualaikum wr wb' || msg === 'assalamualaikum wr wb' || msg === 'assalamualaikum wr.wb' || msg === 'ass') {
         
-      }
+      //   await kirimListMessageMenu(phone, pushName);
+
+      // } else {
+        
+      // }
     }
   }
 
