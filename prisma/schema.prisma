@@ -29,3 +29,23 @@ model DataLayanan {
   time    DateTime
   chat    String @default("")
 }
+
+model Pegawai {
+  id Int @id @default(autoincrement())
+  nama String
+  nip String @unique
+  phone String? @unique
+  username String @unique
+  EvalSiakip EvalSiakip[]
+}
+
+model EvalSiakip {
+  id Int @id @default(autoincrement())
+  userId Int
+  pegawai Pegawai @relation(fields: [userId], references: [id])
+  tanggal DateTime @default(now())
+  jenis Int
+
+  @@unique([userId, jenis, tanggal])
+}
+

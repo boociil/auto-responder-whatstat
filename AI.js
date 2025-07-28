@@ -58,7 +58,6 @@ async function sendPrompt(reqData, idUser) {
 
   const embeddings = new OpenAIEmbeddings({
     baseURL: 'https://openrouter.ai/api/v1',
-    // apiKey : "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",
     apiKey : process.env.OPENAI_API_KEY,
   });
 

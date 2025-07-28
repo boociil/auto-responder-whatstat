@@ -1,9 +1,10 @@
 const axios = require('axios');
 const {kirimPesan, kirimPesanGroup} = require('./message.js');
+const { databaseAddEvalSiakip } = require('./db.js')
 
 const group_bocah_id = process.env.GROUP_ID
 
-const announcePagi = async () => {
+const announcePagi = async (jenis, chat = true) => {
     const url = process.env.SIAKIP_API_URL;
 
     const bulan = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
@@ -27,6 +28,7 @@ const announcePagi = async () => {
             // console.log(response.data.item);
 
             let user_problem = [];
+            let username_user_problem = [];
             
             user.map(user => {
                 // console.log(user.username);
@@ -41,6 +43,7 @@ const announcePagi = async () => {
 
                 if (tidak_aman) {
                     user_problem.push(user.nama);
+                    username_user_problem.push(user.username);
                 }
             });
 
@@ -65,8 +68,11 @@ const announcePagi = async () => {
                 `;
             }
             
-            console.log(user_problem);
-            kirimPesanGroup(group_bocah_id, pesan);
+            console.log(username_user_problem);
+            databaseAddEvalSiakip(username_user_problem, jenis)
+            if (chat) {
+                kirimPesanGroup(group_bocah_id, pesan);
+            }
             // kirimPesan("6282246657077", pesan);
             
         })
@@ -80,7 +86,7 @@ const alertSore = () => {
     kirimPesanGroup(group_bocah_id, pesan);
 }
 
-const announceSore = () => {
+const announceSore = (chat = true) => {
     const url = process.env.SIAKIP_API_URL;
 
     const bulan = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
@@ -107,6 +113,8 @@ const announceSore = () => {
             let user_problem = [];
             let pekerjaan_blm_selesai = [];
             let bukti_dukung_kosong = [];
+            let username_pekerjaan_blm_selesai = [];
+            let username_bukti_dukung_kosong = [];
             
             user.map(u => {
                 // console.log(user.username);
@@ -118,11 +126,13 @@ const announceSore = () => {
                     }
                     if (item.status_pekerjaan == 0){
                         const foundUser = user.find(x => x.username === item.pelaksana_username);
-                        pekerjaan_blm_selesai.push(foundUser.nama)
+                        pekerjaan_blm_selesai.push(foundUser.nama);
+                        username_pekerjaan_blm_selesai.push(foundUser.username);
                     }
                     if (item.bukti_url == null){
                         const foundUser = user.find(x => x.username === item.pelaksana_username);
                         bukti_dukung_kosong.push(foundUser.nama);
+                        username_bukti_dukung_kosong.push(foundUser.username);
                     }
                 });
 
@@ -169,10 +179,18 @@ const announceSore = () => {
                     Selamat Sore, Terimakasih semua pegawai sudah menyelesaikan target SIAKIP Hari ini, semoga bernilai ibadah 🤲
                 `;
             }
+             
+            console.log(bukti_dukung_kosong);
+            console.log(pekerjaan_blm_selesai);
+            
             
             console.log(user_problem);
-            kirimPesanGroup(group_bocah_id, pesan);
-            
+            if(chat) {
+                kirimPesanGroup(group_bocah_id, pesan);
+            }
+            databaseAddEvalSiakip(username_pekerjaan_blm_selesai, 3);
+            databaseAddEvalSiakip(username_bukti_dukung_kosong, 4);
+
         })
         .catch(error => {
             console.error('Error req data:', error);
