@@ -1,167 +1,246 @@
-const { PrismaClient } = require("@prisma/client");
+// const { PrismaClient } = require("@prisma/client");
+// const prisma = new PrismaClient();
 
-const prisma = new PrismaClient();
+// DB Connection pake PG
+const { Pool } = require("pg");
+require("dotenv").config();
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
+pool.connect().then(() => {
+  console.log("Connected to the database");
+}).catch((err) => {
+  console.error("Database connection error", err.stack);
+});
 
 const databaseAddUser = async (nama, notelp, nama_lengkap, email, instansi) => {
   console.log("db add user : ", nama, notelp, nama_lengkap, email, instansi);
 
-  const getuser = await prisma.users.findFirst({
-    where: {
-      notelp: notelp,
-    },
-  });
-
-  if (!getuser) {
-    const addNewUser = await prisma.users.create({
-      data: {
-        nama: nama,
-        nama_lengkap: nama_lengkap || "",
-        notelp: notelp,
-        email: email || "",
-        instansi: instansi || "",
-      },
-    });
-    return 0;
-  } else {
-    const updateUser = await prisma.users.update({
-      where: {
-        id: getuser.id,
-      },
-      data: {
-        nama_lengkap: nama_lengkap,
-        email: email,
-        instansi: instansi,
-      },
-    });
-    return 1;
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      'SELECT * FROM "Users" WHERE notelp = $1 LIMIT 1',
+      [notelp]
+    );
+    const time = new Date();
+    if (res.rowCount === 0) {
+      await client.query(
+        `INSERT INTO "Users" (nama, notelp, nama_lengkap, email, instansi, newest_time)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [nama, notelp, nama_lengkap ?? "", email ?? "", instansi ?? "", time]
+      );
+      return 0;
+    } else {
+      await client.query(
+        `UPDATE "Users"
+         SET nama_lengkap = $1, email = $2, instansi = $3, newest_time = $4
+         WHERE id = $5`,
+        [nama_lengkap ?? "", email ?? "", instansi ?? "", time, res.rows[0].id]
+      );
+      return 1;
+    }
+  } finally {
+    client.release();
   }
 };
 
 const databaseAddDataLayanan = async (layanan, data, notelp, time) => {
   console.log("db add data layanan : ", layanan, data, notelp, time);
 
-  const getuser = await prisma.users.findFirst({
-    where: {
-      notelp: notelp,
-    },
-  });
+  const client = await pool.connect();
+  try {
+    const userRes = await client.query(
+      'SELECT id FROM "Users" WHERE notelp = $1 LIMIT 1',
+      [notelp]
+    );
+    if (userRes.rowCount === 0) {
+      throw new Error("User tidak ditemukan");
+    }
 
-  if (!getuser) {
-    throw new Error("User tidak ditemukan");
+    const insertRes = await client.query(
+      `INSERT INTO "DataLayanan" (user_id, layanan, data, time)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id`,
+      [userRes.rows[0].id, layanan, data, time]
+    );
+
+    return insertRes.rows[0].id;
+  } finally {
+    client.release();
   }
-
-  const addDataLayanan = await prisma.dataLayanan.create({
-    data: {
-      user_id: getuser.id,
-      layanan: layanan,
-      data: data,
-      time: time,
-    },
-  });
-
-  return addDataLayanan.id;
 };
 
 const databasePushChat = async (id, chat) => {
   console.log("db push chat", chat);
 
-  const pushChat = await prisma.dataLayanan.update({
-    where: {
-      id: id,
-    },
-    data: {
-      chat: chat,
-    },
-  });
+  const client = await pool.connect();
+  try {
+    await client.query(
+      `UPDATE "DataLayanan"
+       SET chat = $1
+       WHERE id = $2`,
+      [chat, id]
+    );
+  } finally {
+    client.release();
+  }
 };
 
 const databaseAddEvalSiakip = async (usernames, jenis) => {
   console.log("db add eval siakip", usernames, jenis);
 
-  const users = await prisma.pegawai.findMany({
-    where: {
-      username: { in: usernames },
-    },
-    select: {
-      id: true,
-      username: true,
-    },
-  });
+  const client = await pool.connect();
+  try {
+    const placeholders = usernames.map((_, i) => `$${i + 1}`).join(", ");
+    console.log("placeholders :", placeholders);
 
- // Filter out any null entries
+    console.log("Query SQL:");
+    console.log(
+      `SELECT id, username FROM Pegawai WHERE username IN (${placeholders})`
+    );
+    console.log("Params:", usernames);
 
-  const userMap = Object.fromEntries(users.map((u) => [u.username, u.id]));
-  console.log("userMap :",userMap);
-  
-  const data = usernames.map((username) => {
-    const user = users.find((u) => u.username === username);
-    if (!user) {
-      console.warn(`User with username ${username} not found`);
-      return null; // Skip this entry if user not found
+    const userRes = await client.query(
+      `SELECT id, username FROM "Pegawai"
+       WHERE username IN (${placeholders})`,
+      usernames
+    );
+
+    const userMap = Object.fromEntries(
+      userRes.rows.map((u) => [u.username, u.id])
+    );
+    console.log("userMap :", userMap);
+
+    const now = new Date();
+    const values = [];
+    const insertPlaceholders = [];
+
+    usernames.forEach((username, i) => {
+      const userId = userMap[username];
+      if (userId) {
+        values.push(userId, jenis, now);
+        const offset = i * 3;
+        insertPlaceholders.push(
+          `($${offset + 1}, $${offset + 2}, $${offset + 3})`
+        );
+      } else {
+        console.warn(`User with username ${username} not found`);
+      }
+    });
+
+    if (values.length > 0) {
+      await client.query(
+        `INSERT INTO "EvalSiakip" ("userId", jenis, tanggal)
+         VALUES ${insertPlaceholders.join(", ")}
+         ON CONFLICT ("userId", jenis, tanggal) DO NOTHING`,
+        values
+      );
     }
-    return {
-      userId: user.id,
-      jenis: jenis,
-      tanggal: new Date(),
-    };
-  }).filter(Boolean);
-
-  console.log(data);
-  
-
-  await prisma.evalSiakip.createMany({
-    data,
-    skipDuplicates: true,
-  });
-
+  } finally {
+    client.release();
+  }
 };
 
 function getAwalDanAkhirBulanString(bulanString) {
-  const [tahun, bulan] = bulanString.split('-').map(Number);
+  const [tahun, bulan] = bulanString.split("-").map(Number);
   const awal = new Date(tahun, bulan - 1, 1);
-  const akhir = new Date(tahun, bulan, 1); // Awal bulan berikutnya
+  const akhir = new Date(tahun, bulan, 1);
   return { awal, akhir };
 }
 
 async function databaseGetRekapEvalSiakip(bulanString) {
   const { awal, akhir } = getAwalDanAkhirBulanString(bulanString);
 
-  const pegawaiList = await prisma.pegawai.findMany();
+  const client = await pool.connect();
+  try {
+    const pegawaiRes = await client.query('SELECT id, nama FROM "Pegawai"');
+    const evalRes = await client.query(
+      `SELECT "userId", jenis
+       FROM "EvalSiakip"
+       WHERE tanggal >= $1 AND tanggal < $2`,
+      [awal, akhir]
+    );
 
-  const evalList = await prisma.evalSiakip.findMany({
-    where: {
-      tanggal: {
-        gte: awal,
-        lt: akhir,
-      },
-    },
-    select: {
-      userId: true,
-      jenis: true,
-    },
-  });
+    // untuk ambil pegawai dengan tanggal
+    //     SELECT
+    //   u.nama,
+    //   e.jenis,
+    //   Date(e.tanggal) as tanggal
+    // FROM "EvalSiakip" e
+    // JOIN "Pegawai" u ON e."userId" = u.id
+    // WHERE e.tanggal >= '2025-10-01'
+    //   AND e.tanggal < '2025-11-01';
 
-  const grouped = new Map();
-
-  for (const { userId, jenis } of evalList) {
-    if (!grouped.has(userId)) {
-      grouped.set(userId, { 1: 0, 2: 0, 3: 0, 4: 0 });
+    const grouped = new Map();
+    for (const { userId, jenis } of evalRes.rows) {
+      if (!grouped.has(userId)) {
+        grouped.set(userId, { 1: 0, 2: 0, 3: 0, 4: 0 });
+      }
+      grouped.get(userId)[jenis] += 1;
     }
-    grouped.get(userId)[jenis] += 1;
+
+    const result = pegawaiRes.rows.map((pegawai) => {
+      const counts = grouped.get(pegawai.id) || { 1: 0, 2: 0, 3: 0, 4: 0 };
+      return {
+        nama: pegawai.nama,
+        jenis1: counts[1],
+        jenis2: counts[2],
+        jenis3: counts[3],
+        jenis4: counts[4],
+      };
+    });
+
+    return result;
+  } finally {
+    client.release();
   }
+}
 
-  const result = pegawaiList.map((pegawai) => {
-    const counts = grouped.get(pegawai.id) || { 1: 0, 2: 0, 3: 0, 4: 0 };
-    return {
-      nama: pegawai.nama,
-      jenis1: counts[1],
-      jenis2: counts[2],
-      jenis3: counts[3],
-      jenis4: counts[4],
-    };
-  });
+async function databaseGetDataWhatStat(bulanString) {
+  const { awal, akhir } = getAwalDanAkhirBulanString(bulanString);
 
-  return result;
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      `SELECT 
+        "DataLayanan".id AS data_id,
+        "DataLayanan".layanan,
+        "DataLayanan".time,
+        "DataLayanan".data,
+        "DataLayanan".chat,
+        "Users".id AS user_id,
+        "Users".nama,
+        "Users".nama_lengkap,
+        "Users".email,
+        "Users".instansi
+      FROM "DataLayanan"
+      JOIN "Users" ON "DataLayanan"."user_id" = "Users".id
+      WHERE "DataLayanan".time >= $1 AND "DataLayanan".time < $2`,
+      [awal, akhir]
+    );
+
+    // mapping hasil query ke array data yang bersih
+    const data = result.rows.map((row) => ({
+      id: row.data_id,
+      layanan: row.layanan,
+      time: row.time,
+      data: row.data,
+      chat: row.chat,
+      user: {
+        id: row.user_id,
+        nama: row.nama,
+        namaLengkap: row.nama_lengkap,
+        email: row.email,
+        instansi: row.instansi,
+      },
+    }));
+
+    return data;
+  } finally {
+    client.release();
+  }
 }
 
 module.exports = {
@@ -170,4 +249,5 @@ module.exports = {
   databasePushChat,
   databaseAddEvalSiakip,
   databaseGetRekapEvalSiakip,
+  databaseGetDataWhatStat,
 };

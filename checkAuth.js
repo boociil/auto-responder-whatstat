@@ -12,4 +12,14 @@ function checkAuth(req, res, next) {
   next();
 }
 
-module.exports = checkAuth;
+function authWablas(req, res, next) {
+  const authorization = req.headers['authorization'];
+
+  if (authorization !== process.env.WABLAS_TOKEN || authorization  == undefined) {
+    return res.status(401).json({"error": "Unauthorized" });
+  }
+
+  next();
+}
+
+module.exports = { checkAuth, authWablas };
