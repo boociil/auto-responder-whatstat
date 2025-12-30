@@ -1,17 +1,18 @@
 // require('dotenv').config();
-const axios = require('axios');
+const axios = require("axios");
 const { Pool } = require("pg");
 const pool = new Pool({
-  connectionString: "postgresql://majenewe_ryan:Padang2025@10.0.11.164:5432/majenewe_app"
+  connectionString:
+    "postgresql://majenewe_ryan:Padang2025@10.0.11.164:5432/majenewe_app",
 });
-const WABLAS_TOKEN = "A0jiIVpmnhoNp0mHaxUCt3YIE0tXgbJ59zzPEsZP5ZWex1dVA5bwAEu"
-const WABLAS_SECRET = "7UXqhtqp"
-const WABLAS_URL = 'https://texas.wablas.com/api/v2/send-message'; // endpoint v2 untuk support listMessage
-const WABLAS_LIST_URL = 'https://texas.wablas.com/api/v2/send-list'; // endpoint v2 untuk support listMessage
+const WABLAS_TOKEN = "A0jiIVpmnhoNp0mHaxUCt3YIE0tXgbJ59zzPEsZP5ZWex1dVA5bwAEu";
+const WABLAS_SECRET = "7UXqhtqp";
+const WABLAS_URL = "https://texas.wablas.com/api/v2/send-message"; // endpoint v2 untuk support listMessage
+const WABLAS_LIST_URL = "https://texas.wablas.com/api/v2/send-list"; // endpoint v2 untuk support listMessage
 // const WABLAS_GROUP_URL = 'https://texas.wablas.com/api/v2/group/text'; // endpoint v2 untuk support groupMessage
-const WABLAS_GROUP_URL = 'https://texas.wablas.com/api/v2/send-message'; // endpoint v2 untuk support groupMessage
+const WABLAS_GROUP_URL = "https://texas.wablas.com/api/v2/send-message"; // endpoint v2 untuk support groupMessage
 // const axios = require('axios')
-const group_bocah_id = "6282344852209-1476837342"
+const group_bocah_id = "6282344852209-1476837342";
 
 const databaseAddEvalSiakip = async (usernames, jenis) => {
   console.log("db add eval siakip", usernames, jenis);
@@ -69,55 +70,66 @@ const databaseAddEvalSiakip = async (usernames, jenis) => {
 };
 
 const kirimPesan = async (phone, message) => {
-    try {
-      isProcessing = true;
-      await axios.post(WABLAS_URL, {
+  try {
+    isProcessing = true;
+    await axios.post(
+      WABLAS_URL,
+      {
         data: [
           {
             phone: phone,
             message: message,
             secret: false,
-            priority: true
-          }
-        ]
-      }, {
+            priority: true,
+          },
+        ],
+      },
+      {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': WABLAS_TOKEN + "." + WABLAS_SECRET,
-
-        }
-      });
-    } catch (error) {
-      console.error('Gagal kirim pesan:', error.response?.data || error.message);
-    } finally {
-      isProcessing = false; // Set isProcessing ke false setelah selesai
-      console.log('Pesan berhasil dikirim ke:', phone, 'Isi pesan:', message);
-      
-    }
-  };
+          "Content-Type": "application/json",
+          Authorization: WABLAS_TOKEN + "." + WABLAS_SECRET,
+        },
+      }
+    );
+  } catch (error) {
+    console.error("Gagal kirim pesan:", error.response?.data || error.message);
+  } finally {
+    isProcessing = false; // Set isProcessing ke false setelah selesai
+    console.log("Pesan berhasil dikirim ke:", phone, "Isi pesan:", message);
+  }
+};
 
 const kirimPesanGroup = async (groupId, message) => {
-    console.log('Kirim pesan ke grup:', groupId, message);
-    
+  console.log("Kirim pesan ke grup:", groupId, message);
+
   try {
     isProcessing = true;
-    await axios.post(WABLAS_GROUP_URL, {
-        data: [{
+    await axios.post(
+      WABLAS_GROUP_URL,
+      {
+        data: [
+          {
             phone: groupId, // Gunakan phone untuk mengirim pesan ke grup
             group_id: groupId,
             message: message,
             secret: false,
             priority: true,
             isGroup: true, // Indikasi bahwa ini adalah pesan grup
-        }]
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': WABLAS_TOKEN + "." + WABLAS_SECRET,
+          },
+        ],
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: WABLAS_TOKEN + "." + WABLAS_SECRET,
+        },
       }
-    });
+    );
   } catch (error) {
-    console.error('Gagal kirim pesan grup:', error.response?.data || error.message);
+    console.error(
+      "Gagal kirim pesan grup:",
+      error.response?.data || error.message
+    );
   } finally {
     isProcessing = false; // Set isProcessing ke false setelah selesai
   }
@@ -125,339 +137,440 @@ const kirimPesanGroup = async (groupId, message) => {
 
 // ANNOUNCE PAGI
 const announcePagi = async (jenis, chat = true) => {
-    const url = "https://sulbar.web.bps.go.id/siakip2/api/jurnal_harian/laporan/get_data_hari/daftar"
+  const url =
+    "https://sulbar.web.bps.go.id/siakip2/api/jurnal_harian/laporan/get_data_hari/daftar";
 
-    const bulan = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
+  const bulan = [
+    "Januari",
+    "Februari",
+    "Maret",
+    "April",
+    "Mei",
+    "Juni",
+    "Juli",
+    "Agustus",
+    "September",
+    "Oktober",
+    "November",
+    "Desember",
+  ];
 
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const formattedDateshow = `${day} ${bulan[month-1]} ${year}`;
-    const formattedDate = `${year}-${month}-${day} `;
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const formattedDateshow = `${day} ${bulan[month - 1]} ${year}`;
+  const formattedDate = `${year}-${month}-${day} `;
 
-    const params = {
-        "satuan_kerja_tahun_id" : "52ec8800-c0d8-11ef-83fe-29d37685f42e",
-        "tanggal" : formattedDate,
-    }; 
+  const params = {
+    satuan_kerja_tahun_id: "52ec8800-c0d8-11ef-83fe-29d37685f42e",
+    tanggal: formattedDate,
+  };
 
-    axios.post(url, params)
-        .then(response => {
-            const user = response.data.user_peran;
-            const item = response.data.item;
-            // console.log(response.data.item);
+  axios
+    .post(url, params)
+    .then((response) => {
+      const user = response.data.user_peran;
+      const item = response.data.item;
+      // console.log(response.data.item);
 
-            let user_problem = [];
-            let username_user_problem = [];
-            
-            user.map(user => {
-                // console.log(user.username);
-                let tidak_aman = true;
+      let user_problem = [];
+      let username_user_problem = [];
 
-                item.map(item => {
-                    if (item.pelaksana_username == user.username){
-                        
-                        tidak_aman = false;
-                    }
-                });
+      user.map((user) => {
+        // console.log(user.username);
+        let tidak_aman = true;
 
-                if (tidak_aman) {
-                    user_problem.push(user.nama);
-                    username_user_problem.push(user.username);
-                }
-            });
+        item.map((item) => {
+          if (item.pelaksana_username == user.username) {
+            tidak_aman = false;
+          }
+        });
 
-               // remove PPPK
-            // let usernmToRemove = ['medyaherliati','jufri'];
-            // let nameToRemove = [ 'Medya Herliati SST', 'Mohammad Jufri SST, M.M.']
-            // username_user_problem = username_user_problem.filter(username => !usernmToRemove.includes(username));
-            // user_problem = user_problem.filter(name => !nameToRemove.includes(name));
-            // console.log(user_problem);
-            // ///////////////////////////////
+        if (tidak_aman) {
+          user_problem.push(user.nama);
+          username_user_problem.push(user.username);
+        }
+      });
 
-            let pesan = ``;
+      // remove PPPK
+      // let usernmToRemove = ['medyaherliati','jufri'];
+      // let nameToRemove = [ 'Medya Herliati SST', 'Mohammad Jufri SST, M.M.']
+      // username_user_problem = username_user_problem.filter(username => !usernmToRemove.includes(username));
+      // user_problem = user_problem.filter(name => !nameToRemove.includes(name));
+      // console.log(user_problem);
+      // ///////////////////////////////
 
-            if (user_problem.length != 0) {
-                pesan = `
+      let pesan = ``;
+
+      if (user_problem.length != 0) {
+        pesan = `
                     *Selamat pagi, saya *Benji* (Bot Penjamin Kinerja)😄\nBerikut merupakan daftar pegawai yang belum mengisi SIAKIP pada pagi hari ini pada tanggal ${formattedDateshow} :
                 `;
 
-                for (let i = 0; i < user_problem.length; i++) {
-                    if (i==0){
-                        pesan += `\n- *${user_problem[i]}*\n`;
-                    }else{
-                        pesan += `- *${user_problem[i]}*\n`;
-                    }
-                }
-
-            }else{
-                pesan = `
+        for (let i = 0; i < user_problem.length; i++) {
+          if (i == 0) {
+            pesan += `\n- *${user_problem[i]}*\n`;
+          } else {
+            pesan += `- *${user_problem[i]}*\n`;
+          }
+        }
+      } else {
+        pesan = `
                     Selamat pagi, *Benji* Mengucapkan Terimakasih semua pegawai sudah mengisi SIAKIP pada pagi hari ini, semangat dan tetap produktif 💪😄
                 `;
-            }
-            
-            console.log(username_user_problem);
-            console.log(pesan);
-            
-            // databaseAddEvalSiakip(username_user_problem, jenis)
-            if (chat) {
-                kirimPesanGroup(group_bocah_id, pesan);
-            }
-            if (username_user_problem.length > 0) {
-                // databaseAddEvalSiakip(username_user_problem, jenis);
-                // setTimeout(announcePagi(2), 60 * 60 * 1000);
-            }
-            // kirimPesan("6282246657077", pesan);
-            
-        })
-        .catch(error => {
-            console.error('Error req data:', error);
-        });
-}
+      }
+
+      console.log(username_user_problem);
+      console.log(pesan);
+
+      // databaseAddEvalSiakip(username_user_problem, jenis)
+      if (chat) {
+        kirimPesanGroup(group_bocah_id, pesan);
+      }
+      if (username_user_problem.length > 0) {
+        // databaseAddEvalSiakip(username_user_problem, jenis);
+        // setTimeout(announcePagi(2), 60 * 60 * 1000);
+      }
+      // kirimPesan("6282246657077", pesan);
+    })
+    .catch((error) => {
+      console.error("Error req data:", error);
+    });
+};
 
 const alertSore = () => {
-    const pesan = `*Selamat sore, saya *Benji* (Bot Penjamin Kinerja) mau mengingatkan jangan lupa untuk menyelesaikan kegiatan yang dilaksanakan pada hari ini serta mengupload bukti dukungnya ya, terimakasih😁`
-    kirimPesanGroup(group_bocah_id, pesan);
-}
+  const pesan = `*Selamat sore, saya *Benji* (Bot Penjamin Kinerja) mau mengingatkan jangan lupa untuk menyelesaikan kegiatan yang dilaksanakan pada hari ini serta mengupload bukti dukungnya ya, terimakasih😁`;
+  kirimPesanGroup(group_bocah_id, pesan);
+};
 
 const announceSore = (chat = true) => {
-    const url = "https://sulbar.web.bps.go.id/siakip2/api/jurnal_harian/laporan/get_data_hari/daftar"
+  const url =
+    "https://sulbar.web.bps.go.id/siakip2/api/jurnal_harian/laporan/get_data_hari/daftar";
 
-    const bulan = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
+  const bulan = [
+    "Januari",
+    "Februari",
+    "Maret",
+    "April",
+    "Mei",
+    "Juni",
+    "Juli",
+    "Agustus",
+    "September",
+    "Oktober",
+    "November",
+    "Desember",
+  ];
 
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const formattedDateshow = `${day} ${bulan[month-1]} ${year}`;
-    const formattedDate = `${year}-${month}-${day} `;
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const formattedDateshow = `${day} ${bulan[month - 1]} ${year}`;
+  const formattedDate = `${year}-${month}-${day} `;
 
+  const body = {
+    satuan_kerja_tahun_id: "52ec8800-c0d8-11ef-83fe-29d37685f42e",
+    tanggal: formattedDate,
+  };
 
-    const body = {
-        "satuan_kerja_tahun_id" : "52ec8800-c0d8-11ef-83fe-29d37685f42e",
-        "tanggal" : formattedDate,
-    };
+  axios
+    .post(url, body)
+    .then((response) => {
+      const user = response.data.user_peran;
+      const item = response.data.item;
 
-    axios.post(url, body)
-        .then(response => {
+      let user_problem = [];
+      let pekerjaan_blm_selesai = [];
+      let bukti_dukung_kosong = [];
+      let username_pekerjaan_blm_selesai = [];
+      let username_bukti_dukung_kosong = [];
 
-            const user = response.data.user_peran;
-            const item = response.data.item;
-            
-            let user_problem = [];
-            let pekerjaan_blm_selesai = [];
-            let bukti_dukung_kosong = [];
-            let username_pekerjaan_blm_selesai = [];
-            let username_bukti_dukung_kosong = [];
-            
-            user.map(u => {
-                // console.log(user.username);
-                let tidak_aman = true;
+      user.map((u) => {
+        // console.log(user.username);
+        let tidak_aman = true;
 
-                item.map(item => {
-                    if (item.pelaksana_username == u.username){
-                        tidak_aman = false;
-                    }
-                    if (item.status_pekerjaan == 0){
-                        const foundUser = user.find(x => x.username === item.pelaksana_username);
-                        pekerjaan_blm_selesai.push(foundUser.nama);
-                        username_pekerjaan_blm_selesai.push(foundUser.username);
-                    }
-                    if (item.bukti_url == null){
-                        const foundUser = user.find(x => x.username === item.pelaksana_username);
-                        bukti_dukung_kosong.push(foundUser.nama);
-                        username_bukti_dukung_kosong.push(foundUser.username);
-                    }
-                });
+        item.map((item) => {
+          if (item.pelaksana_username == u.username) {
+            tidak_aman = false;
+          }
+          if (item.status_pekerjaan == 0) {
+            const foundUser = user.find(
+              (x) => x.username === item.pelaksana_username
+            );
+            pekerjaan_blm_selesai.push(foundUser.nama);
+            username_pekerjaan_blm_selesai.push(foundUser.username);
+          }
+          if (item.bukti_url == null) {
+            const foundUser = user.find(
+              (x) => x.username === item.pelaksana_username
+            );
+            bukti_dukung_kosong.push(foundUser.nama);
+            username_bukti_dukung_kosong.push(foundUser.username);
+          }
+        });
 
-                if (tidak_aman) {
-                    user_problem.push(u.nama);
-                }
-            });
+        if (tidak_aman) {
+          user_problem.push(u.nama);
+        }
+      });
 
-            let pesan = ``;
+      let pesan = ``;
 
-            pekerjaan_blm_selesai = [...new Set(pekerjaan_blm_selesai)];
-            bukti_dukung_kosong = [...new Set(bukti_dukung_kosong)];
+      pekerjaan_blm_selesai = [...new Set(pekerjaan_blm_selesai)];
+      bukti_dukung_kosong = [...new Set(bukti_dukung_kosong)];
 
-            if (pekerjaan_blm_selesai.length != 0 && bukti_dukung_kosong.length != 0) {
-                pesan = `
+      if (
+        pekerjaan_blm_selesai.length != 0 &&
+        bukti_dukung_kosong.length != 0
+      ) {
+        pesan = `
                     Selamat sore, saya *Benji* (Bot Penjamin Kinerja) 😄\nBerikut merupakan daftar pegawai yang belum menyelesaikan pekerjaan di SIAKIP pada sore hari ini pada tanggal ${formattedDateshow} :
                 `;
 
-                for (let i = 0; i < pekerjaan_blm_selesai.length; i++) {
-                    if (i == 0){
-                        pesan += `\n- *${pekerjaan_blm_selesai[i]}*\n`;
+        for (let i = 0; i < pekerjaan_blm_selesai.length; i++) {
+          if (i == 0) {
+            pesan += `\n- *${pekerjaan_blm_selesai[i]}*\n`;
+          } else {
+            pesan += `- *${pekerjaan_blm_selesai[i]}*\n`;
+          }
+        }
 
-                    }else{
-                        pesan += `- *${pekerjaan_blm_selesai[i]}*\n`;
-                    }
-                }
+        if (bukti_dukung_kosong.length != 0) {
+          pesan += `\nBerikut untuk yang belum mengupload bukti dukung :`;
 
-                if(bukti_dukung_kosong.length != 0){
-                    pesan += `\nBerikut untuk yang belum mengupload bukti dukung :`
+          for (let i = 0; i < bukti_dukung_kosong.length; i++) {
+            if (i == 0) {
+              pesan += `\n- *${bukti_dukung_kosong[i]}*`;
+            } else {
+              pesan += `\n- *${bukti_dukung_kosong[i]}*`;
+            }
+          }
+        }
 
-                    for (let i = 0; i < bukti_dukung_kosong.length; i++){
-                        if (i==0){
-                            pesan += `\n- *${bukti_dukung_kosong[i]}*`
-                        }else{
-                            pesan += `\n- *${bukti_dukung_kosong[i]}*`
-                        }
-                    }
-                }
-
-                pesan += `\nJangan lupa absen yaa😉`
-
-            }else{
-                pesan = `
+        pesan += `\nJangan lupa absen yaa😉`;
+      } else {
+        pesan = `
                     Selamat Sore, *Benji* mengucpakan Terimakasih semua pegawai sudah menyelesaikan target SIAKIP Hari ini, semoga bernilai ibadah 🤲
                 `;
-            }
-             
-            console.log(bukti_dukung_kosong);
-            console.log(pekerjaan_blm_selesai);
-            
-            
-            console.log(user_problem);
-            if(chat) {
-                kirimPesanGroup(group_bocah_id, pesan);
-            }
-            if(username_pekerjaan_blm_selesai.length > 0) {
-                databaseAddEvalSiakip(username_pekerjaan_blm_selesai, 3);
-                databaseAddEvalSiakip(username_bukti_dukung_kosong, 4);
-            }
+      }
 
-        })
-        .catch(error => {
-            console.error('Error req data:', error);
-        });
-}
+      console.log(bukti_dukung_kosong);
+      console.log(pekerjaan_blm_selesai);
+
+      console.log(user_problem);
+      if (chat) {
+        kirimPesanGroup(group_bocah_id, pesan);
+      }
+      if (username_pekerjaan_blm_selesai.length > 0) {
+        databaseAddEvalSiakip(username_pekerjaan_blm_selesai, 3);
+        databaseAddEvalSiakip(username_bukti_dukung_kosong, 4);
+      }
+    })
+    .catch((error) => {
+      console.error("Error req data:", error);
+    });
+};
 
 const announceSore2 = (chat = true) => {
-    const url = "https://sulbar.web.bps.go.id/siakip2/api/jurnal_harian/laporan/get_data_hari/daftar"
+  const url =
+    "https://sulbar.web.bps.go.id/siakip2/api/jurnal_harian/laporan/get_data_hari/daftar";
 
-    const bulan = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
+  const bulan = [
+    "Januari",
+    "Februari",
+    "Maret",
+    "April",
+    "Mei",
+    "Juni",
+    "Juli",
+    "Agustus",
+    "September",
+    "Oktober",
+    "November",
+    "Desember",
+  ];
 
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const formattedDateshow = `${day} ${bulan[month-1]} ${year}`;
-    const formattedDate = `${year}-${month}-${day} `;
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const formattedDateshow = `${day} ${bulan[month - 1]} ${year}`;
+  const formattedDate = `${year}-${month}-${day} `;
 
+  const body = {
+    satuan_kerja_tahun_id: "52ec8800-c0d8-11ef-83fe-29d37685f42e",
+    tanggal: formattedDate,
+  };
 
-    const body = {
-        "satuan_kerja_tahun_id" : "52ec8800-c0d8-11ef-83fe-29d37685f42e",
-        "tanggal" : formattedDate,
-    };
+  axios
+    .post(url, body)
+    .then((response) => {
+      const user = response.data.user_peran;
+      const item = response.data.item;
 
-    axios.post(url, body)
-        .then(response => {
+      let user_problem = [];
+      let pekerjaan_blm_selesai = [];
+      let bukti_dukung_kosong = [];
+      let username_pekerjaan_blm_selesai = [];
+      let username_bukti_dukung_kosong = [];
 
-            const user = response.data.user_peran;
-            const item = response.data.item;
-            
-            let user_problem = [];
-            let pekerjaan_blm_selesai = [];
-            let bukti_dukung_kosong = [];
-            let username_pekerjaan_blm_selesai = [];
-            let username_bukti_dukung_kosong = [];
-            
-            user.map(u => {
-                // console.log(user.username);
-                let tidak_aman = true;
+      user.map((u) => {
+        // console.log(user.username);
+        let tidak_aman = true;
 
-                item.map(item => {
-                    if (item.pelaksana_username == u.username){
-                        tidak_aman = false;
-                    }
-                    if (item.status_pekerjaan == 0){
-                        const foundUser = user.find(x => x.username === item.pelaksana_username);
-                        pekerjaan_blm_selesai.push(foundUser.nama);
-                        username_pekerjaan_blm_selesai.push(foundUser.username);
-                    }
-                    if (item.bukti_url == null){
-                        const foundUser = user.find(x => x.username === item.pelaksana_username);
-                        bukti_dukung_kosong.push(foundUser.nama);
-                        username_bukti_dukung_kosong.push(foundUser.username);
-                    }
-                });
+        item.map((item) => {
+          if (item.pelaksana_username == u.username) {
+            tidak_aman = false;
+          }
+          if (item.status_pekerjaan == 0) {
+            const foundUser = user.find(
+              (x) => x.username === item.pelaksana_username
+            );
+            pekerjaan_blm_selesai.push(foundUser.nama);
+            username_pekerjaan_blm_selesai.push(foundUser.username);
+          }
+          if (item.bukti_url == null) {
+            const foundUser = user.find(
+              (x) => x.username === item.pelaksana_username
+            );
+            bukti_dukung_kosong.push(foundUser.nama);
+            username_bukti_dukung_kosong.push(foundUser.username);
+          }
+        });
 
-                if (tidak_aman) {
-                    user_problem.push(u.nama);
-                }
-            });
+        if (tidak_aman) {
+          user_problem.push(u.nama);
+        }
+      });
 
-            // // remove pak juf bu medya
-            // let usernmToRemove = ['medyaherliati','jufri'];
-            // let nameToRemove = [ 'Medya Herliati SST', 'Mohammad Jufri SST, M.M.']
-            // username_pekerjaan_blm_selesai = username_pekerjaan_blm_selesai.filter(username => !usernmToRemove.includes(username));
-            // pekerjaan_blm_selesai = pekerjaan_blm_selesai.filter(name => !nameToRemove.includes(name));
-            // username_bukti_dukung_kosong = username_bukti_dukung_kosong.filter(username => !usernmToRemove.includes(username));
-            // bukti_dukung_kosong = bukti_dukung_kosong.filter(name => !nameToRemove.includes(name));
-            // ///////////////////////////////
+      // // remove pak juf bu medya
+      // let usernmToRemove = ['medyaherliati','jufri'];
+      // let nameToRemove = [ 'Medya Herliati SST', 'Mohammad Jufri SST, M.M.']
+      // username_pekerjaan_blm_selesai = username_pekerjaan_blm_selesai.filter(username => !usernmToRemove.includes(username));
+      // pekerjaan_blm_selesai = pekerjaan_blm_selesai.filter(name => !nameToRemove.includes(name));
+      // username_bukti_dukung_kosong = username_bukti_dukung_kosong.filter(username => !usernmToRemove.includes(username));
+      // bukti_dukung_kosong = bukti_dukung_kosong.filter(name => !nameToRemove.includes(name));
+      // ///////////////////////////////
 
-            let pesan = ``;
+      let pesan = ``;
 
-            pekerjaan_blm_selesai = [...new Set(pekerjaan_blm_selesai)];
-            bukti_dukung_kosong = [...new Set(bukti_dukung_kosong)];
+      pekerjaan_blm_selesai = [...new Set(pekerjaan_blm_selesai)];
+      bukti_dukung_kosong = [...new Set(bukti_dukung_kosong)];
 
-            if (pekerjaan_blm_selesai.length != 0 && bukti_dukung_kosong.length != 0) {
-                pesan = `
+      if (
+        pekerjaan_blm_selesai.length != 0 &&
+        bukti_dukung_kosong.length != 0
+      ) {
+        pesan = `
                     Selamat sore, saya *Benji* (Bot Penjamin Kinerja) 😄\nBerikut merupakan daftar pegawai yang belum menyelesaikan pekerjaan di SIAKIP pada sore hari ini pada tanggal ${formattedDateshow} :
                 `;
 
-                for (let i = 0; i < pekerjaan_blm_selesai.length; i++) {
-                    if (i == 0){
-                        pesan += `\n- *${pekerjaan_blm_selesai[i]}*\n`;
+        for (let i = 0; i < pekerjaan_blm_selesai.length; i++) {
+          if (i == 0) {
+            pesan += `\n- *${pekerjaan_blm_selesai[i]}*\n`;
+          } else {
+            pesan += `- *${pekerjaan_blm_selesai[i]}*\n`;
+          }
+        }
 
-                    }else{
-                        pesan += `- *${pekerjaan_blm_selesai[i]}*\n`;
-                    }
-                }
+        if (bukti_dukung_kosong.length != 0) {
+          pesan += `\nBerikut untuk yang belum mengupload bukti dukung :`;
 
-                if(bukti_dukung_kosong.length != 0){
-                    pesan += `\nBerikut untuk yang belum mengupload bukti dukung :`
+          for (let i = 0; i < bukti_dukung_kosong.length; i++) {
+            if (i == 0) {
+              pesan += `\n- *${bukti_dukung_kosong[i]}*`;
+            } else {
+              pesan += `\n- *${bukti_dukung_kosong[i]}*`;
+            }
+          }
+        }
 
-                    for (let i = 0; i < bukti_dukung_kosong.length; i++){
-                        if (i==0){
-                            pesan += `\n- *${bukti_dukung_kosong[i]}*`
-                        }else{
-                            pesan += `\n- *${bukti_dukung_kosong[i]}*`
-                        }
-                    }
-                }
-
-                pesan += `\nJangan lupa absen yaa😉`
-
-            }else{
-                pesan = `
+        pesan += `\nJangan lupa absen yaa😉`;
+      } else {
+        pesan = `
                     Selamat Sore, *Benji* mengucpakan Terimakasih semua pegawai sudah menyelesaikan target SIAKIP Hari ini, semoga bernilai ibadah 🤲
                 `;
-            }
-             
-            console.log(bukti_dukung_kosong);
-            console.log(pekerjaan_blm_selesai);
-            
-            
-            console.log(user_problem);
-            if(chat) {
-                kirimPesanGroup(group_bocah_id, pesan);
-            }
-            if(username_pekerjaan_blm_selesai.length > 0) {
-                // databaseAddEvalSiakip(username_pekerjaan_blm_selesai, 5);
-                // databaseAddEvalSiakip(username_bukti_dukung_kosong, 6);
-            }
+      }
 
-        })
-        .catch(error => {
-            console.error('Error req data:', error);
-        });
-}
+      console.log(bukti_dukung_kosong);
+      console.log(pekerjaan_blm_selesai);
+
+      console.log(user_problem);
+      if (chat) {
+        kirimPesanGroup(group_bocah_id, pesan);
+      }
+      if (username_pekerjaan_blm_selesai.length > 0) {
+        // databaseAddEvalSiakip(username_pekerjaan_blm_selesai, 5);
+        // databaseAddEvalSiakip(username_bukti_dukung_kosong, 6);
+      }
+    })
+    .catch((error) => {
+      console.error("Error req data:", error);
+    });
+};
 
 const test = () => {
-    kirimPesan("6282246657077", "test pesan");
-    console.log("test dikirim");
+  kirimPesan("6282246657077", "test pesan");
+  console.log("test dikirim");
+};
+
+async function checkApiStatusAndNotify({
+  url,
+  nomor_hp,
+  timeout = 5000,
+  namaApi = "API",
+}) {
+  const startTime = Date.now();
+  let pesan = "";
+
+  try {
+    const response = await axios.get(url, {
+      timeout,
+      validateStatus: () => true,
+    });
+
+    const responseTime = Date.now() - startTime;
+
+    pesan = `
+📡 *Monitoring API*
+Nama API   : ${namaApi}
+Status     : 🟢 ON
+HTTP Code  : ${response.status}
+Response   : ${responseTime} ms
+Waktu Cek  : ${new Date().toLocaleString("id-ID")}
+`.trim();
+
+    kirimPesan(nomor_hp, pesan);
+
+    return {
+      status: "ON",
+      httpStatus: response.status,
+      responseTimeMs: responseTime,
+    };
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+
+    pesan = `
+📡 *Monitoring API*
+Nama API   : ${namaApi}
+Status     : 🔴 OFF
+Error      : ${
+      error.code === "ECONNABORTED" ? "Request timeout" : error.message
+    }
+Response   : ${responseTime} ms
+Waktu Cek  : ${new Date().toLocaleString("id-ID")}
+`.trim();
+
+    kirimPesan(nomor_hp, pesan);
+
+    return {
+      status: "OFF",
+      responseTimeMs: responseTime,
+      error: error.message,
+    };
+  }
 }
 
 // announcePagi(1);
@@ -495,6 +608,15 @@ switch (arg) {
     } else if (day === 5) {
       // setTimeout(announceSore2, 30 * 60 * 1000); // delay 30 menit (jam 16.30)
     }
+    break;
+  case "APIcheck":
+    checkApiStatusAndNotify({
+      url: "https://sulbar.web.bps.go.id/siakip2/api/jurnal_harian/laporan/get_data_hari/daftar",
+      nomor_hp: "6282246657077",
+      timeout: 5000,
+      namaApi: "API SIAKIP",
+    });
+
     break;
   case "test":
     test();
