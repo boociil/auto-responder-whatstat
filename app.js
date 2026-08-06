@@ -1,19 +1,32 @@
+// over all, ini file utama yang dijalankan ketika mau run whatstat dengna
+// node app.js
+// --------------------------------------
+// disini, selain menyediakan endpoint untuk webhook, juga terdapat fungsi-fungsi untuk mengirim pesan ke user, mengirim list message, dan mengirim notifikasi ke petugas
+
+
 // SETUP LIBRARY
 const express = require("express");
 const bodyParser = require("body-parser");
 const axios = require("axios");
+
+// import fungsi-fungsi dari checkAuth.js untuk cek autentikasi
 const { checkAuth, authWablas } = require("./checkAuth");
 
 require("dotenv").config();
 
 const cors = require("cors");
 
+// Import dari db.js, fungsi terkait database
 const {
   databaseAddUser,
   databaseAddDataLayanan,
   databasePushChat,
   databaseGetRekapEvalSiakip,
   databaseGetDataWhatStat,
+  databaseGetIndikatorBenji,
+  databaseGetForExcel,
+  databaseGetBlockedDates,
+  databaseIsTodayBlocked,
 } = require("./db.js");
 
 const app = express();
@@ -30,30 +43,68 @@ app.use(bodyParser.urlencoded({ extended: true }));
 //   next();
 // });
 
+// diimport dari fungsi siakip-announcer.js, yang berisi fungsi untuk mengirim pengumuman pagi dan sore secara manual ketika benji bermasalah
 const {
   announcePagi,
   announceSore,
   test,
   alertSore,
-} = require("./siakip-announcer.js"); // Import fungsi announcePagi dan announceSore dari siakip-announcer.js
+} = require("./announce-script.js"); // Import fungsi announcePagi dan announceSore dari siakip-announcer.js
 
 /////////////////////// END OF SETUP LIBRARY
 
-// Ganti dengan API token dan URL Wablas-mu
+// SETUP ENVIRONMENT VARIABLES
+// best practicenya, setiap URL yang dipake buat API disimpan di file .env, cuman ya bgtu wkwkwk
 const WABLAS_TOKEN = process.env.WABLAS_TOKEN;
 const WABLAS_URL = "https://texas.wablas.com/api/v2/send-message"; // endpoint v2 untuk support listMessage
 const WABLAS_LIST_URL = "https://texas.wablas.com/api/v2/send-list"; // endpoint v2 untuk support listMessage
 const WABLAS_SECRET = process.env.WABLAS_SECRET;
 
-// Message
+// pesan akhir, ketika petugas sudah selesai melakukan layanan
 const messageEnd = `*Terimakasih* sudah menggunakan layanan WhatStat 😁🙏🏻\n\nJika ada pertanyaan atau butuh bantuan terkait data statistik Kabupaten Majene, jangan ragu hubungi kami 😊\n\nKunjungi website BPS Majene di https://majenekab.bps.go.id/ untuk info terbaru!  Ohiya, untuk meningkatkan layanan kami, mohon bantuan untuk mengisi Survei kebutuhan data ya 😁🙏🏻 \n\nLink SKD dapat diakses pada link berikut : \nhttps://s.bps.go.id/SKD7601`;
 
 // Const untuk menyimpan data user yang masuk
 const listMessage = [
-    
+  {
+    "nama": "Test Webhook",
+    "noTelp": "6285867765107",
+    "chatId": 1
+  },
+  {
+    "nama": "6282190928839",
+    "noTelp": "6282190928839",
+    "chatId": 2,
+    "layanan": 1,
+    "namaLengkap": "ananda dwi pratiwi",
+    "instansi": "kanwil atr/bpn provinsi sulbar",
+    "email": "anandadwipratiwii@gmail.com",
+    "dataYangDibutuhkan": "data ketenagakerjaan sektor pertanian, industri, dan jasa berdasarkan kecamatan",
+    "isCS": true,
+    "dbId": 81,
+    "chat": [
+      "whatstat : data ketenagakerjaan sektor pertanian, industri, dan jasa berdasarkan kecamatan <~ mungkin saya perlu perjelas dulu, mungkin yang dimaksud adalah data jumlah ketenagakerjaan per sektor industri, pertanian dan jasa ya? ",
+      "whatstat : mohon maaf sebelumnya, untuk level estimasinya, tidak sampai level kecamatan, tapi hanya pada level kabupaten🙏🏻 ",
+      "client : boleh dikirimkan saja bu🙏🏻 ",
+      "whatstat : untuk data ini juga memerlukan pengolahan lebih lanjut, apakah bapak ibu berkenan menunggu? estimasi sore ini🙏🏻 ",
+      "client : boleh bu, terima kasih sebelumnya🙏🏻 ",
+      "whatstat : baik, nanti jika proses pengolahan sudah selesai, akan langsung kami kirimkan, trimakasih ",
+      "client : baik terima kasih bu "
+    ]
+  },
+  {
+    "nama": "6282187661956",
+    "noTelp": "6282187661956",
+    "chatId": 3
+  },
+  {
+    "nama": "6283830020314",
+    "noTelp": "6283830020314",
+    "chatId": 1
+  }
 ];
 
 // Const kata kata sapaan
+// cuman, ini masih belum teraplikasikan, karna yg sekarang user manapun kalo ngechat pasti akan muncul menu nya
 const openingWord = [
   "halo",
   "selamat",
@@ -86,6 +137,7 @@ const openingWord = [
   "nanya",
 ];
 
+// ini fungsi untuk ngecek apakah pesan yang dikirim user mengandung kata sapaan atau tidak, kalo iya, maka akan muncul menu layanan
 const cekIsSalamPembuka = (msg) => {
   const listMsg = msg.split(" ");
   console.log("list msg", listMsg);
@@ -100,13 +152,16 @@ const cekIsSalamPembuka = (msg) => {
   return false;
 };
 
+// setiap user yang masuk, akan disimpan di listMessage, dan setiap user akan memiliki property noTelp, namaLengkap, email, instansi, layanan, dataYangDibutuhkan, pengaduan, isCS, isAI, chat
 let chatId = 0;
 
+// fungsi untuk menambahkan user baru ke listMessage, dan juga men
 function isValidEmail(email) {
   const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return regex.test(email);
 }
 
+// fungsi untuk menambahkan user baru ke listMessage, dan juga men
 const deleteDataUser = (phoneNumber) => {
   // Cari index user yang ingin dihapus
   const index = listMessage.findIndex((user) => user.noTelp === phoneNumber);
@@ -120,7 +175,10 @@ const deleteDataUser = (phoneNumber) => {
   console.log(listMessage);
 };
 
-// Fungsi parsing:
+// Fungsi parsing
+// jadi, ketika pesan masuk baik dari USER YANG PILIH MENU atau PETUGAS YANG PILIH MENU, maka bentuknya akan mengandung <~ dan #, misal :
+// menu petugas <~ ok, saya akan respon # 08123456789;Nama Tamu;Nama Petugas
+// makanya perlu fungsi parsing ini
 function parseListString(input) {
   // Pisahkan bagian sebelum dan sesudah <~
   const [title, rest] = input.split("<~").map((s) => s.trim());
@@ -133,7 +191,7 @@ function parseListString(input) {
   };
 }
 
-// Kirim pesan LIST MESSAGE
+// Kirim pesan LIST MESSAGE untuk memilih tindakan
 const kirimListMenuPetugas = async (
   phone,
   namaPetugas,
@@ -188,6 +246,7 @@ const kirimListMenuPetugas = async (
   }
 };
 
+// Kirim pesan LIST MESSAGE kepada user yang masuk, untuk memilih layanan
 const kirimListMessageMenu = async (phone, nama) => {
   try {
     await axios.post(
@@ -240,6 +299,9 @@ const kirimListMessageMenu = async (phone, nama) => {
   }
 };
 
+// Kirim pesan LIST MESSAGE kepada user yang masuk, untuk memilih Ya atau Tidak
+// awalnya ini bertujuan untuk menanyakan apakah user ingin dihubungkan ke petugas atau tidak, tapi sekarang sudah tidak dipakai lagi
+// namun belum teraplikasikan
 const kirimListMessageYaTidak = async (phone, nama) => {
   try {
     await axios.post(
@@ -314,11 +376,16 @@ const kirimPesan = async (phone, message) => {
   }
 };
 
+// fungsi untuk mengakhiri chat dengan user, yaitu mengirim pesan akhir dan menghapus data user dari listMessage
 const akhiriChat = async (phone) => {
   await kirimPesan(phone, messageEnd);
   deleteDataUser(phone);
 };
 
+// fungsi untuk ngecek apakah masih jam layanan
+// awalnya ini untuk pengecekkan apakah user yang masuk masih dalam jam layanan atau tidak, tapi sekarang sudah tidak dipakai lagi
+// aplikasinya untuk jawaban AI, jika diluar layanan akan dibalas oleh AI spt gpt, or openclaw, or yg lain
+// cuman, karena AI ny belum optimal maka belum diaplikasikan
 function isJamLayanan() {
   const now = new Date();
   const totalMenit = now.getHours() * 60 + now.getMinutes();
@@ -331,6 +398,7 @@ function isJamLayanan() {
   // return false;
 }
 
+// Daftar Petugas PST
 const petugas = [
   { nama: "Ryan", phone: "6282246657077" },
   { nama: "Haris", phone: "6281241157987" },
@@ -338,6 +406,7 @@ const petugas = [
   // { nama: "Tiara", phone: "6285777595273" },
 ];
 
+// Fungsi untuk mengirim notifikasi ke petugas
 const notifPetugas = async (
   nama,
   instansi,
@@ -351,8 +420,8 @@ const notifPetugas = async (
 
   if (isRekrutmen) {
     await kirimListMenuPetugas(
-      petugas[3].phone,
-      petugas[3].nama,
+      petugas[bulanSekarang % 3].phone,
+      petugas[bulanSekarang % 3].nama,
       layanan,
       nama,
       phoneTamu,
@@ -360,7 +429,7 @@ const notifPetugas = async (
       detail
     );
     console.log(
-      `Notifikasi dikirim ke ${petugas[3].nama} (${petugas[3].phone}) untuk layanan ${layanan} dari ${nama} (${instansi}) (${phoneTamu}) dengan detail: ${detail}`
+      `Notifikasi dikirim ke ${petugas[bulanSekarang % 3].nama} (${petugas[bulanSekarang % 3].phone}) untuk layanan ${layanan} dari ${nama} (${instansi}) (${phoneTamu}) dengan detail: ${detail}`
     );
   } else {
     await kirimListMenuPetugas(
@@ -381,6 +450,7 @@ const notifPetugas = async (
   // await kirimListMenuPetugas(petugas[0].phone, petugas[0].nama, layanan, nama, phoneTamu, instansi, detail);
 };
 
+// Pesan rekrutmen
 const pesanRekrutmen =
   "Seputar Rekrutmen Mitra Statistik BPS Kabupaten Majene 2026\n\n" +
   "1. Mitra statistik adalah tenaga kerja yang direkrut untuk menunjang kegiatan sensus/survei baik kegiatan pendataan lapangan maupun pengolahan di Badan Pusat Statistik.\n\n" +
@@ -400,6 +470,7 @@ const pesanRekrutmen =
   "- Foto Terbaru\n\n" +
   "*Catatan:* KTP dan Surat Keterangan Domisili digabung menjadi 1 dokumen.";
 
+  // pesan rekrutmen
 const pesanRekrutmen2 =
   "Mekanisme Pendaftaran\n\n" +
   "Calon Mitra yang *BELUM PERNAH TERDAFTAR* pada aplikasi SOBAT:\n" +
@@ -410,6 +481,9 @@ const pesanRekrutmen2 =
   "• Melengkapi data profil\n" +
   "• Mendaftar pada kegiatan “Rekrutmen Mitra BPS 2026 - Pendaftaran”";
 
+// Awalnya sempat kepikiran untuk bikin antrian pesan, tapi ternyata ga kepake, 
+// karena ternyata wablas bisa handle banyak request sekaligus, jadi ga perlu antrian
+// dan kemarin aplikasinya blm work, nanti bisa dikembangkan
 const queue = [];
 let isProcessingQueue = false;
 
@@ -431,6 +505,10 @@ const processingQueue = () => {
   }
 };
 
+// ------------------------------
+// end of antrian pesan
+
+// ini endpoint untuk webhook, yang akan dipanggil oleh wablas ketika ada pesan masuk
 app.post("/webhook", async (req, res) => {
   const xff =
     req.headers["x-forwarded-for"] ||
@@ -450,7 +528,11 @@ app.post("/webhook", async (req, res) => {
 
   const foundUser = listMessage.find((user) => user.noTelp === phone);
 
+  // hasOwnProperty("isCS") untuk cek apakah user sudah terhubung dengan CS atau belum, karena jika sudah terhubung dengan CS, 
+  // maka pesan yang masuk akan disimpan di chat, jadi tidak akan diproses ke if dibawah untuk cek layanan, 
+  // karena layanan sudah dipilih sebelumnya
   if (isFromMe || isGroup || (foundUser && foundUser.hasOwnProperty("isCS"))) {
+    // jika chat mengandung "terimakasih sudah", maka akhiri chat dan hapus data user
     if (msg.includes("terimakasih sudah")) {
       akhiriChat(phone);
     }
@@ -1064,12 +1146,16 @@ app.post("/webhook", async (req, res) => {
   res.sendStatus(200); // wajib respon ke webhook
 });
 
+// ini buat cek apakah server masih hidup atau tidak, bisa diakses dari luar
+// untuk kepentingan debug
 app.get("/", async (req, res) => {
   console.log("diakses nih");
 
   res.send("Hallo");
 });
 
+// ini endpoint untuk cek rekap evaluasi siakip, bisa diakses dari luar
+// tapi bukan endpoint ini yang dipakai
 app.get("/siakip", async (req, res) => {
   // const hasil = await databaseGetRekapEvalSiakip("2025-07");
   try {
@@ -1082,6 +1168,9 @@ app.get("/siakip", async (req, res) => {
   }
 });
 
+// Berikut merupakan endpoint untuk mentrigger announce nya Benji jika suatu hal dia tidak muncul
+
+// endpoint akses manual untuk annouce pagi
 app.get("/announcePagi1", async (req, res) => {
   // const hasil = await databaseGetRekapEvalSiakip("2025-07");
   announcePagi(1);
@@ -1101,17 +1190,23 @@ app.get("/announceSore", async (req, res) => {
   announceSore();
 });
 
+// end of endpoint akses manual untuk annouce benji
+
+
+// untuk testing endpoint kirim pesan ke nomor tertentu, bisa diakses dari luar
 app.post("/test-api", async (req, res) => {
   await kirimPesan(6282246657077, `Message From Server`);
   announcePagi(1, false);
   announceSore(false);
 });
 
+// fungsi validasi month yang diinput user, harus berupa 2 digit angka, contoh: 01, 02, 03, ..., 12
 function isValidMonth(month) {
   const regex = /^(0[1-9]|1[0-2])$/;
   return regex.test(month);
 }
 
+// fungsi validasi year yang diinput user, harus berupa 4 digit angka, contoh: 2025
 function isValidYear(year) {
   // regex: hanya angka 4 digit, contoh 2025
   return /^\d{4}$/.test(year);
@@ -1169,6 +1264,132 @@ app.post("/api/v1/data-whatstat", checkAuth, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Terjadi kesalahan" });
+  }
+});
+
+app.post("/api/v1/indikator-benji", checkAuth, async (req, res) => {
+  try {
+    const { tahun, bulan } = req.body;
+    console.log(req.body);
+
+    if (!tahun || !bulan) {
+      return res.status(400).json({ error: "Tahun dan bulan missing" });
+    }
+
+    if (!isValidMonth(bulan)) {
+      return res.status(400).json({ error: "Bulan tidak valid" });
+    }
+    if (!isValidYear(tahun)) {
+      return res.status(400).json({ error: "Tahun tidak valid" });
+    }
+    const q = `${tahun}-${bulan}`;
+    const hasil = await databaseGetIndikatorBenji(q);
+    if (hasil.length === 0) {
+      return res.status(404).json({ error: "Data tidak ditemukan" });
+    }
+    return res.status(200).send({
+      status: "success",
+      data: hasil,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err });
+  }
+});
+
+// API untuk export data indikator benji ke excel
+app.post("/api/v1/export-excel", checkAuth, async (req, res) => {
+  try {
+    const { tahun, bulan } = req.body;
+    console.log(req.body);
+
+    if (!tahun || !bulan) {
+      return res.status(400).json({ error: "Tahun dan bulan missing" });
+    }
+
+    if (!isValidMonth(bulan)) {
+      return res.status(400).json({ error: "Bulan tidak valid" });
+    }
+    if (!isValidYear(tahun)) {
+      return res.status(400).json({ error: "Tahun tidak valid" });
+    }
+
+    const q = `${tahun}-${bulan}`;
+    const hasil = await databaseGetForExcel(q);
+    if (hasil.length === 0) {
+      return res.status(404).json({ error: "Data tidak ditemukan" });
+    }
+    return res.status(200).send({
+      status: "success",
+      data: hasil,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Terjadi kesalahan" });
+  }
+});
+
+// API untuk mendapatkan tanggal yang diblokir
+app.post("/api/v1/blocked-dates", checkAuth, async (req, res) => {
+  try {
+    const { tahun, bulan, tanggal } = req.body;
+    console.log(req.body);
+
+    if (!tahun || !bulan) {
+      return res.status(400).json({ error: "Tahun dan bulan missing" });
+    }
+
+    if (!isValidMonth(bulan)) {
+      return res.status(400).json({ error: "Bulan tidak valid" });
+    }
+    if (!isValidYear(tahun)) {
+      return res.status(400).json({ error: "Tahun tidak valid" });
+    }
+
+    const q = `${tahun}-${bulan}-${tanggal}`;
+    const hasil = await databaseGetBlockedDates(q);
+    if (hasil.length === 0) {
+      return res.status(404).json({ error: "Data tidak ditemukan" });
+    }
+    return res.status(200).send({
+      status: "success",
+      data: hasil,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err });
+  }
+});
+
+// 
+app.post("/api/v1/today-block", checkAuth, async (req, res) => {
+  try {
+    const { tahun, bulan, tanggal } = req.body;
+    console.log(req.body);
+
+    if (!tahun || !bulan) {
+      return res.status(400).json({ error: "Tahun dan bulan missing" });
+    }
+
+    if (!isValidMonth(bulan)) {
+      return res.status(400).json({ error: "Bulan tidak valid" });
+    }
+    if (!isValidYear(tahun)) {
+      return res.status(400).json({ error: "Tahun tidak valid" });
+    }
+
+    const q = `${tahun}-${bulan}-${tanggal}`;
+    const hasil = await databaseIsTodayBlocked(q);
+    if (hasil.length === 0) {
+      return res.status(404).json({ error: "Data tidak ditemukan" });
+    }
+    return res.status(200).send({
+      status: "success",
+      data: hasil,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err });
   }
 });
 
