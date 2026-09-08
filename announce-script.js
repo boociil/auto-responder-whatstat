@@ -27,8 +27,10 @@ const pool = new Pool({
   connectionString: "postgresql://majenewe_ryan:Padang2025@10.0.11.164:5432/majenewe_app"
 });
 
-const WABLAS_TOKEN = "A0jiIVpmnhoNp0mHaxUCt3YIE0tXgbJ59zzPEsZP5ZWex1dVA5bwAEu"
-const WABLAS_SECRET = "7UXqhtqp"
+// const WABLAS_TOKEN = "A0jiIVpmnhoNp0mHaxUCt3YIE0tXgbJ59zzPEsZP5ZWex1dVA5bwAEu"
+const WABLAS_TOKEN = "YnnPJaExxGbdyzvJ67OXdMKvUajAFZOQIf9dd75O8Qi8sT6Z307flIa"
+// const WABLAS_SECRET = "7UXqhtqp"
+const WABLAS_SECRET = "BDAYXNM1"
 const WABLAS_URL = 'https://texas.wablas.com/api/v2/send-message'; // endpoint v2 untuk support listMessage
 const WABLAS_LIST_URL = 'https://texas.wablas.com/api/v2/send-list'; // endpoint v2 untuk support listMessage
 // const WABLAS_GROUP_URL = 'https://texas.wablas.com/api/v2/group/text'; // endpoint v2 untuk support groupMessage
@@ -203,7 +205,7 @@ const announcePagi = async (jenis, chat = true) => {
         .then(response => {
             const user = response.data.user_peran;
             const item = response.data.item;
-            // console.log(response.data.item);
+            console.log("response item : ",response.data);
 
             let user_problem = [];
             let username_user_problem = [];
@@ -214,7 +216,6 @@ const announcePagi = async (jenis, chat = true) => {
 
                 item.map(item => {
                     if (item.pelaksana_username == user.username){
-                        
                         tidak_aman = false;
                     }
                 });
@@ -247,8 +248,9 @@ const announcePagi = async (jenis, chat = true) => {
                 `;
             }
             
-            console.log(username_user_problem);
+            console.log("username problem ",username_user_problem);
             // databaseAddEvalSiakip(username_user_problem, jenis)
+            console.log("pesan : ", pesan)
             if (jenis == 2){
                 if (username_user_problem.length > 0) {
                     databaseAddEvalSiakip(username_user_problem, jenis);
@@ -589,7 +591,7 @@ const day = new Date().getDay(); // 0 = Minggu, 1 = Senin, dst
 
 switch (arg) {
   case "pagi1":
-    announcePagi(1);
+    announcePagi(1,false);
     break;
   case "pagi2":
     announcePagi(2);
@@ -609,12 +611,13 @@ switch (arg) {
     }
     break;
   case "APIcheck":
-    checkApiStatusAndNotify({
-      url: "https://sulbar.web.bps.go.id/siakip2/api/jurnal_harian/laporan/get_data_hari/daftar",
-      nomor_hp: "6282246657077",
-      timeout: 5000,
-      namaApi: "API SIAKIP",
-    });
+    // checkApiStatusAndNotify({
+    //   url: "https://sulbar.web.bps.go.id/siakip2/api/jurnal_harian/laporan/get_data_hari/daftar",
+    //   nomor_hp: "6282246657077",
+    //   timeout: 5000,
+    //   namaApi: "API SIAKIP",
+    // });
+    kirimPesanGroup(group_bocah_id, "Selamat pagi bapak ibu, semoga dalam keadaan sehat selalu, mohon maaf Benji absen kemarin hari karna sakit hehe, jangan lupa isi SIAKIP yaa, terimakasih😁");
 
     break;
   case "test":

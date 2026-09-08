@@ -19,7 +19,7 @@ pool
   });
 
 const databaseAddUser = async (nama, notelp, nama_lengkap, email, instansi) => {
-  console.log("db add user : ", nama, notelp, nama_lengkap, email, instansi);
+  // console.log("db add user : ", nama, notelp, nama_lengkap, email, instansi);
 
   const client = await pool.connect();
   try {
@@ -92,18 +92,18 @@ const databasePushChat = async (id, chat) => {
 };
 
 const databaseAddEvalSiakip = async (usernames, jenis) => {
-  console.log("db add eval siakip", usernames, jenis);
+  // console.log("db add eval siakip", usernames, jenis);
 
   const client = await pool.connect();
   try {
     const placeholders = usernames.map((_, i) => `$${i + 1}`).join(", ");
-    console.log("placeholders :", placeholders);
+    // console.log("placeholders :", placeholders);
 
-    console.log("Query SQL:");
-    console.log(
-      `SELECT id, username FROM Pegawai WHERE username IN (${placeholders})`,
-    );
-    console.log("Params:", usernames);
+    // console.log("Query SQL:");
+    // console.log(
+    //   `SELECT id, username FROM Pegawai WHERE username IN (${placeholders})`,
+    // );
+    // console.log("Params:", usernames);
 
     const userRes = await client.query(
       `SELECT id, username FROM "Pegawai"

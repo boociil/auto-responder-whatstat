@@ -65,42 +65,7 @@ const messageEnd = `*Terimakasih* sudah menggunakan layanan WhatStat 😁🙏�
 
 // Const untuk menyimpan data user yang masuk
 const listMessage = [
-  {
-    "nama": "Test Webhook",
-    "noTelp": "6285867765107",
-    "chatId": 1
-  },
-  {
-    "nama": "6282190928839",
-    "noTelp": "6282190928839",
-    "chatId": 2,
-    "layanan": 1,
-    "namaLengkap": "ananda dwi pratiwi",
-    "instansi": "kanwil atr/bpn provinsi sulbar",
-    "email": "anandadwipratiwii@gmail.com",
-    "dataYangDibutuhkan": "data ketenagakerjaan sektor pertanian, industri, dan jasa berdasarkan kecamatan",
-    "isCS": true,
-    "dbId": 81,
-    "chat": [
-      "whatstat : data ketenagakerjaan sektor pertanian, industri, dan jasa berdasarkan kecamatan <~ mungkin saya perlu perjelas dulu, mungkin yang dimaksud adalah data jumlah ketenagakerjaan per sektor industri, pertanian dan jasa ya? ",
-      "whatstat : mohon maaf sebelumnya, untuk level estimasinya, tidak sampai level kecamatan, tapi hanya pada level kabupaten🙏🏻 ",
-      "client : boleh dikirimkan saja bu🙏🏻 ",
-      "whatstat : untuk data ini juga memerlukan pengolahan lebih lanjut, apakah bapak ibu berkenan menunggu? estimasi sore ini🙏🏻 ",
-      "client : boleh bu, terima kasih sebelumnya🙏🏻 ",
-      "whatstat : baik, nanti jika proses pengolahan sudah selesai, akan langsung kami kirimkan, trimakasih ",
-      "client : baik terima kasih bu "
-    ]
-  },
-  {
-    "nama": "6282187661956",
-    "noTelp": "6282187661956",
-    "chatId": 3
-  },
-  {
-    "nama": "6283830020314",
-    "noTelp": "6283830020314",
-    "chatId": 1
-  }
+
 ];
 
 // Const kata kata sapaan
@@ -400,10 +365,10 @@ function isJamLayanan() {
 
 // Daftar Petugas PST
 const petugas = [
-  { nama: "Ryan", phone: "6282246657077" },
+  // { nama: "Ryan", phone: "6282246657077" },
+  { nama: "Afnan", phone: "6281225759764" },
   { nama: "Haris", phone: "6281241157987" },
   { nama: "Maya", phone: "6285804357544" },
-  // { nama: "Tiara", phone: "6285777595273" },
 ];
 
 // Fungsi untuk mengirim notifikasi ke petugas
@@ -617,6 +582,7 @@ app.post("/webhook", async (req, res) => {
                     "Terimakasih, anda akan segera dihubungkan ke petugas kami"
                   );
                   foundUser.isCS = true;
+                  foundUser.chat = [];
 
                   const time = new Date();
 
@@ -829,6 +795,7 @@ app.post("/webhook", async (req, res) => {
                 "Terimakasih, anda akan segera dihubungkan ke Petugas kami, mohon tunggu sebentar."
               );
               foundUser.isCS = true;
+              foundUser.chat = [];
             } else {
               if (isValidEmail(msg)) {
                 foundUser.email = msg;
@@ -852,6 +819,7 @@ app.post("/webhook", async (req, res) => {
                     "Terimakasih, anda akan segera dihubungkan ke Petugas kami, mohon tunggu sebentar."
                   );
                   foundUser.isCS = true;
+                  foundUser.chat = [];
                 } else {
                   await kirimPesan(
                     phone,
@@ -895,6 +863,7 @@ app.post("/webhook", async (req, res) => {
                 "Terimakasih, anda akan segera dihubungkan ke Petugas kami, mohon tunggu sebentar."
               );
               foundUser.isCS = true;
+              foundUser.chat = [];
             } else {
               await kirimPesan(
                 phone,
@@ -1011,6 +980,7 @@ app.post("/webhook", async (req, res) => {
                   );
 
                   foundUser.isCS = true;
+                  foundUser.chat = [];
 
                   const time = new Date();
 
