@@ -12,10 +12,10 @@ const pool = new Pool({
 pool
   .connect()
   .then(() => {
-    console.log("Connected to the database");
+    console.log("Database connected successfully");
   })
   .catch((err) => {
-    console.error("Database connection error", err.stack);
+    console.error("Database connection error : ", err.stack);
   });
 
 const databaseAddUser = async (nama, notelp, nama_lengkap, email, instansi) => {

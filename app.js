@@ -3,7 +3,6 @@
 // --------------------------------------
 // disini, selain menyediakan endpoint untuk webhook, juga terdapat fungsi-fungsi untuk mengirim pesan ke user, mengirim list message, dan mengirim notifikasi ke petugas
 
-
 // SETUP LIBRARY
 const express = require("express");
 const bodyParser = require("body-parser");
@@ -64,9 +63,7 @@ const WABLAS_SECRET = process.env.WABLAS_SECRET;
 const messageEnd = `*Terimakasih* sudah menggunakan layanan WhatStat 😁🙏🏻\n\nJika ada pertanyaan atau butuh bantuan terkait data statistik Kabupaten Majene, jangan ragu hubungi kami 😊\n\nKunjungi website BPS Majene di https://majenekab.bps.go.id/ untuk info terbaru!  Ohiya, untuk meningkatkan layanan kami, mohon bantuan untuk mengisi Survei kebutuhan data ya 😁🙏🏻 \n\nLink SKD dapat diakses pada link berikut : \nhttps://s.bps.go.id/SKD7601`;
 
 // Const untuk menyimpan data user yang masuk
-const listMessage = [
-
-];
+const listMessage = [];
 
 // Const kata kata sapaan
 // cuman, ini masih belum teraplikasikan, karna yg sekarang user manapun kalo ngechat pasti akan muncul menu nya
@@ -164,9 +161,9 @@ const kirimListMenuPetugas = async (
   namaTamu,
   phoneTamu,
   instansi,
-  detail
+  detail,
 ) => {
-  phone, namaPetugas, layanan, namaTamu, phoneTamu, instansi, detail;
+  (phone, namaPetugas, layanan, namaTamu, phoneTamu, instansi, detail);
 
   try {
     await axios.post(
@@ -201,12 +198,12 @@ const kirimListMenuPetugas = async (
           "Content-Type": "application/json",
           Authorization: WABLAS_TOKEN + "." + WABLAS_SECRET,
         },
-      }
+      },
     );
   } catch (error) {
     console.error(
       "Gagal kirim list message:",
-      error.response?.data || error.message
+      error.response?.data || error.message,
     );
   }
 };
@@ -254,12 +251,12 @@ const kirimListMessageMenu = async (phone, nama) => {
           "Content-Type": "application/json",
           Authorization: WABLAS_TOKEN + "." + WABLAS_SECRET,
         },
-      }
+      },
     );
   } catch (error) {
     console.error(
       "Gagal kirim list message:",
-      error.response?.data || error.message
+      error.response?.data || error.message,
     );
   }
 };
@@ -301,12 +298,12 @@ const kirimListMessageYaTidak = async (phone, nama) => {
           "Content-Type": "application/json",
           Authorization: WABLAS_TOKEN + "." + WABLAS_SECRET,
         },
-      }
+      },
     );
   } catch (error) {
     console.error(
       "Gagal kirim list message:",
-      error.response?.data || error.message
+      error.response?.data || error.message,
     );
   }
 };
@@ -332,7 +329,7 @@ const kirimPesan = async (phone, message) => {
           "Content-Type": "application/json",
           Authorization: WABLAS_TOKEN + "." + WABLAS_SECRET,
         },
-      }
+      },
     );
   } catch (error) {
     console.error("Gagal kirim pesan:", error.response?.data || error.message);
@@ -351,16 +348,35 @@ const akhiriChat = async (phone) => {
 // awalnya ini untuk pengecekkan apakah user yang masuk masih dalam jam layanan atau tidak, tapi sekarang sudah tidak dipakai lagi
 // aplikasinya untuk jawaban AI, jika diluar layanan akan dibalas oleh AI spt gpt, or openclaw, or yg lain
 // cuman, karena AI ny belum optimal maka belum diaplikasikan
-function isJamLayanan() {
+function isJamLayanan(timeZone = 'Asia/Makassar') {
   const now = new Date();
-  const totalMenit = now.getHours() * 60 + now.getMinutes();
 
-  const batasAwal = 8 * 60; // 08:00 → 480 menit
-  const batasAkhir = 15 * 60 + 30; // 15:30 → 930 menit
+  // Ambil jam, menit, dan nama hari sekaligus berdasarkan timezone target
+  const formatter = new Intl.DateTimeFormat('en-GB', {
+    timeZone,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    weekday: 'short', // "Mon", "Tue", "Wed", dst
+  });
+
+  const parts = formatter.formatToParts(now);
+  const jam = Number(parts.find(p => p.type === 'hour').value);
+  const menit = Number(parts.find(p => p.type === 'minute').value);
+  const hari = parts.find(p => p.type === 'weekday').value; // ex: "Sat"
+
+  // Cek hari kerja (Senin-Jumat)
+  const hariKerja = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+  if (!hariKerja.includes(hari)) {
+    return false;
+  }
+
+  // Cek rentang jam
+  const totalMenit = jam * 60 + menit;
+  const batasAwal = 8 * 60;        // 08:00
+  const batasAkhir = 15 * 60 + 30; // 15:30
 
   return totalMenit >= batasAwal && totalMenit <= batasAkhir;
-
-  // return false;
 }
 
 // Daftar Petugas PST
@@ -378,7 +394,7 @@ const notifPetugas = async (
   layanan,
   detail,
   phoneTamu,
-  isRekrutmen = false
+  isRekrutmen = false,
 ) => {
   const tanggalSekarang = new Date();
   const bulanSekarang = tanggalSekarang.getMonth() + 1; // hasilnya 0 - 11
@@ -391,10 +407,10 @@ const notifPetugas = async (
       nama,
       phoneTamu,
       instansi,
-      detail
+      detail,
     );
     console.log(
-      `Notifikasi dikirim ke ${petugas[bulanSekarang % 3].nama} (${petugas[bulanSekarang % 3].phone}) untuk layanan ${layanan} dari ${nama} (${instansi}) (${phoneTamu}) dengan detail: ${detail}`
+      `Notifikasi dikirim ke ${petugas[bulanSekarang % 3].nama} (${petugas[bulanSekarang % 3].phone}) untuk layanan ${layanan} dari ${nama} (${instansi}) (${phoneTamu}) dengan detail: ${detail}`,
     );
   } else {
     await kirimListMenuPetugas(
@@ -404,12 +420,12 @@ const notifPetugas = async (
       nama,
       phoneTamu,
       instansi,
-      detail
+      detail,
     );
     console.log(
       `Notifikasi dikirim ke ${petugas[bulanSekarang % 3].nama} (${
         petugas[bulanSekarang % 3].phone
-      }) untuk layanan ${layanan} dari ${nama} (${instansi}) (${phoneTamu}) dengan detail: ${detail}`
+      }) untuk layanan ${layanan} dari ${nama} (${instansi}) (${phoneTamu}) dengan detail: ${detail}`,
     );
   }
   // await kirimListMenuPetugas(petugas[0].phone, petugas[0].nama, layanan, nama, phoneTamu, instansi, detail);
@@ -435,7 +451,7 @@ const pesanRekrutmen =
   "- Foto Terbaru\n\n" +
   "*Catatan:* KTP dan Surat Keterangan Domisili digabung menjadi 1 dokumen.";
 
-  // pesan rekrutmen
+// pesan rekrutmen
 const pesanRekrutmen2 =
   "Mekanisme Pendaftaran\n\n" +
   "Calon Mitra yang *BELUM PERNAH TERDAFTAR* pada aplikasi SOBAT:\n" +
@@ -446,7 +462,7 @@ const pesanRekrutmen2 =
   "• Melengkapi data profil\n" +
   "• Mendaftar pada kegiatan “Rekrutmen Mitra BPS 2026 - Pendaftaran”";
 
-// Awalnya sempat kepikiran untuk bikin antrian pesan, tapi ternyata ga kepake, 
+// Awalnya sempat kepikiran untuk bikin antrian pesan, tapi ternyata ga kepake,
 // karena ternyata wablas bisa handle banyak request sekaligus, jadi ga perlu antrian
 // dan kemarin aplikasinya blm work, nanti bisa dikembangkan
 const queue = [];
@@ -493,8 +509,8 @@ app.post("/webhook", async (req, res) => {
 
   const foundUser = listMessage.find((user) => user.noTelp === phone);
 
-  // hasOwnProperty("isCS") untuk cek apakah user sudah terhubung dengan CS atau belum, karena jika sudah terhubung dengan CS, 
-  // maka pesan yang masuk akan disimpan di chat, jadi tidak akan diproses ke if dibawah untuk cek layanan, 
+  // hasOwnProperty("isCS") untuk cek apakah user sudah terhubung dengan CS atau belum, karena jika sudah terhubung dengan CS,
+  // maka pesan yang masuk akan disimpan di chat, jadi tidak akan diproses ke if dibawah untuk cek layanan,
   // karena layanan sudah dipilih sebelumnya
   if (isFromMe || isGroup || (foundUser && foundUser.hasOwnProperty("isCS"))) {
     // jika chat mengandung "terimakasih sudah", maka akhiri chat dan hapus data user
@@ -512,7 +528,7 @@ app.post("/webhook", async (req, res) => {
     }
 
     console.log(
-      "Abaikan pesan dari nomor sendiri atau ada property atau dari group"
+      "Abaikan pesan dari nomor sendiri atau ada property atau dari group",
     );
     console.log(listMessage);
     return res.sendStatus(200);
@@ -533,17 +549,17 @@ app.post("/webhook", async (req, res) => {
         if (user.layanan == "1") {
           await kirimPesan(
             phoneTamu,
-            `Halo ${namaTamu}, saya ${namaPetugas}😄, mohon berkenan untuk menunggu sembari saya mengecek data yang anda butuhkan.`
+            `Halo ${namaTamu}, saya ${namaPetugas}😄, mohon berkenan untuk menunggu sembari saya mengecek data yang anda butuhkan.`,
           );
         } else if (user.layanan == "4") {
           await kirimPesan(
             phoneTamu,
-            `Halo ${namaTamu}, saya ${namaPetugas}😄, ada yang bisa kami bantu?.`
+            `Halo ${namaTamu}, saya ${namaPetugas}😄, ada yang bisa kami bantu?.`,
           );
         } else if (user.layanan == "6") {
           await kirimPesan(
             phoneTamu,
-            `Halo ${namaTamu}, saya ${namaPetugas}😄, ada yang bisa kami bantu?.`
+            `Halo ${namaTamu}, saya ${namaPetugas}😄, ada yang bisa kami bantu?.`,
           );
         }
       } else if (generateMsg.title === "akhiri, sesi telah berakhir") {
@@ -553,7 +569,7 @@ app.post("/webhook", async (req, res) => {
         databasePushChat(userEnd.dbId, JSON.stringify(userEnd.chat));
         await kirimPesan(
           phoneTamu,
-          `Baik ${namaTamu}, Terimakasih sudah menghubungi Whatstat, saya ${namaPetugas} sebagai petugas PST izin mengakhiri sesi ini, terimakasih.🙏🏻`
+          `Baik ${namaTamu}, Terimakasih sudah menghubungi Whatstat, saya ${namaPetugas} sebagai petugas PST izin mengakhiri sesi ini, terimakasih.🙏🏻`,
         );
         akhiriChat(phoneTamu);
       }
@@ -575,11 +591,11 @@ app.post("/webhook", async (req, res) => {
                     foundUser.instansi,
                     "Konsultasi",
                     foundUser.dataYangDibutuhkan,
-                    phone
+                    phone,
                   );
                   await kirimPesan(
                     phone,
-                    "Terimakasih, anda akan segera dihubungkan ke petugas kami"
+                    "Terimakasih, anda akan segera dihubungkan ke petugas kami",
                   );
                   foundUser.isCS = true;
                   foundUser.chat = [];
@@ -590,7 +606,7 @@ app.post("/webhook", async (req, res) => {
                     foundUser.layanan,
                     foundUser.dataYangDibutuhkan,
                     phone,
-                    time
+                    time,
                   );
                   foundUser.dbId = dbId;
 
@@ -606,6 +622,7 @@ app.post("/webhook", async (req, res) => {
                   //   );
                   const balasan = `Maaf, silahkan hubungi kami pada jam layanan, yaitu Senin - Jumat pukul 08.00 - 15.30 WITA. Terimakasih🙏🏻`;
                   await kirimPesan(phone, balasan);
+                  deleteDataUser(phone);
                   // }
                 }
               } else {
@@ -614,7 +631,7 @@ app.post("/webhook", async (req, res) => {
                 //
                 await kirimPesan(
                   phone,
-                  "Silahkan masukkan data yang anda butuhkan atau sampaikan keluhan anda terkait data statistik."
+                  "Silahkan masukkan data yang anda butuhkan atau sampaikan keluhan anda terkait data statistik.",
                 );
               }
             } else {
@@ -622,12 +639,12 @@ app.post("/webhook", async (req, res) => {
                 foundUser.email = msg;
                 await kirimPesan(
                   phone,
-                  "Silahkan masukkan data yang anda butuhkan atau sampaikan keluhan anda terkait data statistik."
+                  "Silahkan masukkan data yang anda butuhkan atau sampaikan keluhan anda terkait data statistik.",
                 );
               } else {
                 await kirimPesan(
                   phone,
-                  "Mohon maaf, email yang anda masukkan tidak valid, silahkan masukkan email dengan format yang benar. "
+                  "Mohon maaf, email yang anda masukkan tidak valid, silahkan masukkan email dengan format yang benar. ",
                 );
               }
             }
@@ -658,16 +675,16 @@ app.post("/webhook", async (req, res) => {
                 phone,
                 foundUser.namaLengkap,
                 foundUser.email,
-                foundUser.instansi
+                foundUser.instansi,
               );
               await kirimPesan(
                 phone,
-                "Silahkan masukkan data yang anda butuhkan atau sampaikan keluhan anda terkait data statistik."
+                "Silahkan masukkan data yang anda butuhkan atau sampaikan keluhan anda terkait data statistik.",
               );
             } else {
               await kirimPesan(
                 phone,
-                "Mohon maaf, email yang anda masukkan tidak valid, silahkan masukkan email dengan format yang benar. "
+                "Mohon maaf, email yang anda masukkan tidak valid, silahkan masukkan email dengan format yang benar. ",
               );
             }
             // foundUser.email = email;
@@ -681,13 +698,13 @@ app.post("/webhook", async (req, res) => {
                   foundUser.layanan,
                   foundUser.pengaduan,
                   phone,
-                  time
+                  time,
                 );
                 foundUser.dbId = dbId;
                 console.log("database add user ini");
                 await kirimPesan(
                   phone,
-                  "Terimakasih Sudah menghubungi *WhatStat*, Pengaduan anda akan kami proses paling lambat 1x24 Jam"
+                  "Terimakasih Sudah menghubungi *WhatStat*, Pengaduan anda akan kami proses paling lambat 1x24 Jam",
                 );
                 akhiriChat(phone);
               } else {
@@ -695,7 +712,7 @@ app.post("/webhook", async (req, res) => {
 
                 await kirimPesan(
                   phone,
-                  `Kami mohon maaf atas ketidaknyamanannya Bapak/Ibu ${foundUser.namaLengkap}🙏🏻. Silahkan sampaikan pengaduan anda.`
+                  `Kami mohon maaf atas ketidaknyamanannya Bapak/Ibu ${foundUser.namaLengkap}🙏🏻. Silahkan sampaikan pengaduan anda.`,
                 );
               }
             } else {
@@ -704,20 +721,20 @@ app.post("/webhook", async (req, res) => {
                 if (foundUser.instansi) {
                   await kirimPesan(
                     phone,
-                    "Terimakasih Sudah menghubungi *WhatStat*, Pengaduan anda akan kami proses paling lambat 1x24 Jam"
+                    "Terimakasih Sudah menghubungi *WhatStat*, Pengaduan anda akan kami proses paling lambat 1x24 Jam",
                   );
                   akhiriChat(phone);
                 } else {
                   await kirimPesan(
                     phone,
-                    "Silahkan Masukan Nama Instansi Anda."
+                    "Silahkan Masukan Nama Instansi Anda.",
                   );
                 }
                 await kirimPesan(phone, "Silahkan Masukan Nama Instansi Anda.");
               } else {
                 await kirimPesan(
                   phone,
-                  "Mohon maaf, email yang anda masukkan tidak valid, silahkan masukkan email dengan format yang benar."
+                  "Mohon maaf, email yang anda masukkan tidak valid, silahkan masukkan email dengan format yang benar.",
                 );
               }
             }
@@ -738,12 +755,12 @@ app.post("/webhook", async (req, res) => {
               foundUser.email = email;
               await kirimPesan(
                 phone,
-                `Kami mohon maaf atas ketidaknyamanannya Bapak/Ibu *${foundUser.namaLengkap}*🙏🏻. Silahkan sampaikan pengaduan anda.`
+                `Kami mohon maaf atas ketidaknyamanannya Bapak/Ibu *${foundUser.namaLengkap}*🙏🏻. Silahkan sampaikan pengaduan anda.`,
               );
             } else {
               await kirimPesan(
                 phone,
-                "Mohon maaf, email yang anda masukkan tidak valid, silahkan masukkan email dengan format yang benar."
+                "Mohon maaf, email yang anda masukkan tidak valid, silahkan masukkan email dengan format yang benar.",
               );
             }
             // foundUser.email = email;
@@ -760,7 +777,7 @@ app.post("/webhook", async (req, res) => {
               `Merupakan layanan yang membantu pengguna data dalam mengakses Perpustakaan Statistik tercetak maupun digital yang berisi Publikasi data Statistik yang dirilis oleh BPS. Layanan Perpustakaan Statistik maksimal kami layani 1x24 Jam dari pengajuan. Pengajuan layanan dapat dilakukan melalui *WhatStat* pada menu 1.\n\n` +
               `3. Layanan Rekomendasi Statistik\n` +
               `Merupakan layanan Rekomendasi untuk kegiatan statistik yang dilaksanakan oleh OPD terkait agar data yang dihasilkan merupakan data yang berkualitas. Layanan Rekomendasi Statistik maksimal kami layani 20 Hari kerja setelah pengajuan rekomendasi kami terima. Layanan ini akan segera diadakan di *WhatStat*.\n\n\n` +
-              `Jika anda sudah menentukan layanan mana yang mau anda gunakan, silahkan ketik "Menu".`
+              `Jika anda sudah menentukan layanan mana yang mau anda gunakan, silahkan ketik "Menu".`,
           );
           deleteDataUser(phone);
         } else if (foundUser.layanan == "4") {
@@ -771,7 +788,7 @@ app.post("/webhook", async (req, res) => {
                 phone,
                 foundUser.namaLengkap,
                 foundUser.instansi,
-                foundUser.noTelp
+                foundUser.noTelp,
               );
 
               const time = new Date();
@@ -779,7 +796,7 @@ app.post("/webhook", async (req, res) => {
                 foundUser.layanan,
                 "-",
                 phone,
-                time
+                time,
               );
               foundUser.dbId = dbId;
 
@@ -788,11 +805,11 @@ app.post("/webhook", async (req, res) => {
                 foundUser.instansi,
                 "Lainnya",
                 "-",
-                phone
+                phone,
               );
               await kirimPesan(
                 phone,
-                "Terimakasih, anda akan segera dihubungkan ke Petugas kami, mohon tunggu sebentar."
+                "Terimakasih, anda akan segera dihubungkan ke Petugas kami, mohon tunggu sebentar.",
               );
               foundUser.isCS = true;
               foundUser.chat = [];
@@ -805,31 +822,31 @@ app.post("/webhook", async (req, res) => {
                     phone,
                     foundUser.namaLengkap,
                     foundUser.instansi,
-                    foundUser.noTelp
+                    foundUser.noTelp,
                   );
                   notifPetugas(
                     foundUser.namaLengkap,
                     foundUser.instansi,
                     "Lainnya",
                     "-",
-                    phone
+                    phone,
                   );
                   await kirimPesan(
                     phone,
-                    "Terimakasih, anda akan segera dihubungkan ke Petugas kami, mohon tunggu sebentar."
+                    "Terimakasih, anda akan segera dihubungkan ke Petugas kami, mohon tunggu sebentar.",
                   );
                   foundUser.isCS = true;
                   foundUser.chat = [];
                 } else {
                   await kirimPesan(
                     phone,
-                    "Silahkan Masukan Nama Instansi Anda."
+                    "Silahkan Masukan Nama Instansi Anda.",
                   );
                 }
               } else {
                 await kirimPesan(
                   phone,
-                  "Mohon maaf, email yang anda masukkan tidak valid, silahkan masukkan email dengan format yang benar."
+                  "Mohon maaf, email yang anda masukkan tidak valid, silahkan masukkan email dengan format yang benar.",
                 );
               }
             }
@@ -856,18 +873,18 @@ app.post("/webhook", async (req, res) => {
                 foundUser.instansi,
                 "Lainnya",
                 "-",
-                phone
+                phone,
               );
               await kirimPesan(
                 phone,
-                "Terimakasih, anda akan segera dihubungkan ke Petugas kami, mohon tunggu sebentar."
+                "Terimakasih, anda akan segera dihubungkan ke Petugas kami, mohon tunggu sebentar.",
               );
               foundUser.isCS = true;
               foundUser.chat = [];
             } else {
               await kirimPesan(
                 phone,
-                "Mohon maaf, email yang anda masukkan tidak valid, silahkan masukkan email dengan format yang benar."
+                "Mohon maaf, email yang anda masukkan tidak valid, silahkan masukkan email dengan format yang benar.",
               );
             }
             // foundUser.email = email;
@@ -882,20 +899,20 @@ app.post("/webhook", async (req, res) => {
                   foundUser.layanan,
                   foundUser.pengaduan,
                   phone,
-                  time
+                  time,
                 );
                 foundUser.dbId = dbId;
                 console.log("database add user ini");
                 await kirimPesan(
                   phone,
-                  "Terimakasih Sudah menghubungi *WhatStat*, Pengaduan anda akan kami proses paling lambat 1x24 Jam"
+                  "Terimakasih Sudah menghubungi *WhatStat*, Pengaduan anda akan kami proses paling lambat 1x24 Jam",
                 );
                 akhiriChat(phone);
               } else {
                 foundUser.instansi = msg;
                 await kirimPesan(
                   phone,
-                  `Kami mohon maaf atas ketidaknyamanannya Bapak/Ibu ${foundUser.namaLengkap}🙏🏻. Silahkan sampaikan pengaduan anda.`
+                  `Kami mohon maaf atas ketidaknyamanannya Bapak/Ibu ${foundUser.namaLengkap}🙏🏻. Silahkan sampaikan pengaduan anda.`,
                 );
               }
             } else {
@@ -904,20 +921,20 @@ app.post("/webhook", async (req, res) => {
                 if (foundUser.instansi) {
                   await kirimPesan(
                     phone,
-                    "Terimakasih Sudah menghubungi *WhatStat*, Pengaduan anda akan kami proses paling lambat 1x24 Jam"
+                    "Terimakasih Sudah menghubungi *WhatStat*, Pengaduan anda akan kami proses paling lambat 1x24 Jam",
                   );
                   akhiriChat(phone);
                 } else {
                   await kirimPesan(
                     phone,
-                    "Silahkan Masukan Nama Instansi Anda."
+                    "Silahkan Masukan Nama Instansi Anda.",
                   );
                 }
                 await kirimPesan(phone, "Silahkan Masukan Nama Instansi Anda.");
               } else {
                 await kirimPesan(
                   phone,
-                  "Mohon maaf, email yang anda masukkan tidak valid, silahkan masukkan email dengan format yang benar."
+                  "Mohon maaf, email yang anda masukkan tidak valid, silahkan masukkan email dengan format yang benar.",
                 );
               }
             }
@@ -941,16 +958,16 @@ app.post("/webhook", async (req, res) => {
                 phone,
                 foundUser.namaLengkap,
                 foundUser.email,
-                foundUser.instansi
+                foundUser.instansi,
               );
               await kirimPesan(
                 phone,
-                `Kami mohon maaf atas ketidaknyamanannya Bapak/Ibu *${foundUser.namaLengkap}*🙏🏻. Silahkan sampaikan pengaduan anda.`
+                `Kami mohon maaf atas ketidaknyamanannya Bapak/Ibu *${foundUser.namaLengkap}*🙏🏻. Silahkan sampaikan pengaduan anda.`,
               );
             } else {
               await kirimPesan(
                 phone,
-                "Mohon maaf, email yang anda masukkan tidak valid, silahkan masukkan email dengan format yang benar."
+                "Mohon maaf, email yang anda masukkan tidak valid, silahkan masukkan email dengan format yang benar.",
               );
             }
             // foundUser.email = email;
@@ -967,7 +984,7 @@ app.post("/webhook", async (req, res) => {
                   // Hubungkan ke petugas
                   await kirimPesan(
                     phone,
-                    "Anda akan segera dihubungkan ke petugas."
+                    "Anda akan segera dihubungkan ke petugas.",
                   );
 
                   notifPetugas(
@@ -976,7 +993,7 @@ app.post("/webhook", async (req, res) => {
                     "Rekrutmen Mitra Statistik BPS 2026",
                     "Mau bicara lebih lanjut tentang rekrutmen mitra statistik BPS 2026",
                     phone,
-                    true
+                    true,
                   );
 
                   foundUser.isCS = true;
@@ -988,7 +1005,7 @@ app.post("/webhook", async (req, res) => {
                     foundUser.layanan,
                     foundUser.dataYangDibutuhkan,
                     phone,
-                    time
+                    time,
                   );
                   foundUser.dbId = dbId;
                 } else {
@@ -1020,13 +1037,13 @@ app.post("/webhook", async (req, res) => {
                 phone,
                 `
     Mohon bantuan anda untuk mengisi form data diri.             
-                    `
+                    `,
               );
               await kirimPesan(
                 phone,
                 `
   Nama : \nEmail : \nInstansi : \n
-                  `
+                  `,
               );
             } else if (generateMsg.title === "pengaduan terkait layanan") {
               foundUser.layanan = 2;
@@ -1034,13 +1051,13 @@ app.post("/webhook", async (req, res) => {
                 phone,
                 `
         Mohon bantuan anda untuk mengisi form data diri.             
-                        `
+                        `,
               );
               await kirimPesan(
                 phone,
                 `
       Nama : \nEmail : \nInstansi : \n
-                      `
+                      `,
               );
             } else if (generateMsg.title === "pengaduan lainnya") {
               foundUser.layanan = 5;
@@ -1048,13 +1065,13 @@ app.post("/webhook", async (req, res) => {
                 phone,
                 `
         Mohon bantuan anda untuk mengisi form data diri.             
-                        `
+                        `,
               );
               await kirimPesan(
                 phone,
                 `
       Nama : \nEmail : \nInstansi : \n
-                      `
+                      `,
               );
             } else if (generateMsg.title === "panduan") {
               foundUser.layanan = 3;
@@ -1068,7 +1085,7 @@ app.post("/webhook", async (req, res) => {
                   `Merupakan layanan yang membantu pengguna data dalam mengakses Perpustakaan Statistik tercetak maupun digital yang berisi Publikasi data Statistik yang dirilis oleh BPS. Layanan Perpustakaan Statistik maksimal kami layani 1x24 Jam dari pengajuan. Pengajuan layanan dapat dilakukan melalui *WhatStat* pada menu 1.\n\n` +
                   `3. Layanan Rekomendasi Statistik\n` +
                   `Merupakan layanan Rekomendasi untuk kegiatan statistik yang dilaksanakan oleh OPD terkait agar data yang dihasilkan merupakan data yang berkualitas. Layanan Rekomendasi Statistik maksimal kami layani 20 Hari kerja setelah pengajuan rekomendasi kami terima. Layanan ini akan segera diadakan di *WhatStat*.\n\n\n` +
-                  `Jika anda sudah menentukan layanan mana yang mau anda gunakan, silahkan ketik "Menu".`
+                  `Jika anda sudah menentukan layanan mana yang mau anda gunakan, silahkan ketik "Menu".`,
               );
               deleteDataUser(phone);
             } else if (generateMsg.title === "lainnya") {
@@ -1077,13 +1094,13 @@ app.post("/webhook", async (req, res) => {
                 phone,
                 `
     Mohon bantuan anda untuk mengisi form data diri.             
-                    `
+                    `,
               );
               await kirimPesan(
                 phone,
                 `
   Nama : \nEmail : \nInstansi : \n
-                  `
+                  `,
               );
             } else if (generateMsg.title === "rekrutmen mitra bps") {
               foundUser.layanan = 6;
@@ -1161,7 +1178,6 @@ app.get("/announceSore", async (req, res) => {
 });
 
 // end of endpoint akses manual untuk annouce benji
-
 
 // untuk testing endpoint kirim pesan ke nomor tertentu, bisa diakses dari luar
 app.post("/test-api", async (req, res) => {
@@ -1331,7 +1347,7 @@ app.post("/api/v1/blocked-dates", checkAuth, async (req, res) => {
   }
 });
 
-// 
+//
 app.post("/api/v1/today-block", checkAuth, async (req, res) => {
   try {
     const { tahun, bulan, tanggal } = req.body;
@@ -1370,5 +1386,5 @@ app.post("/status_msg", async (req, res) => {
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server berjalan di http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
