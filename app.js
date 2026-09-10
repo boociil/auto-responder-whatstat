@@ -584,7 +584,7 @@ app.post("/webhook", async (req, res) => {
           if (foundUser.namaLengkap) {
             if (foundUser.email) {
               if (foundUser.instansi) {
-                if (isJamLayanan()) {
+                // if (isJamLayanan()) {
                   foundUser.dataYangDibutuhkan = msg;
                   notifPetugas(
                     foundUser.namaLengkap,
@@ -611,20 +611,20 @@ app.post("/webhook", async (req, res) => {
                   foundUser.dbId = dbId;
 
                   return;
-                } else {
-                  // if (!foundUser.isAI) {
-                  //   foundUser.dataYangDibutuhkan = msg;
-                  //   // foundUser.isAI = true;
-                  //   // await kirimPesan(phone, `Baik, terimakasih ${foundUser.namaLengkap}, mohon berkenan menunggu untuk saya carikan datanya ya😁.`);
-                  //   await kirimPesan(
-                  //     phone,
-                  //     `Disclaimer ya ${foundUser.namaLengkap}, karena ${foundUser.namaLengkap} menghubungi diluar jam layanan, maka untuk pelayanan akan dibantu oleh AI, mohon tunggu sebentar sembari saya carikan datanya, terimakasih😁.`
-                  //   );
-                  const balasan = `Maaf, silahkan hubungi kami pada jam layanan, yaitu Senin - Jumat pukul 08.00 - 15.30 WITA. Terimakasih🙏🏻`;
-                  await kirimPesan(phone, balasan);
-                  deleteDataUser(phone);
-                  // }
-                }
+                // } else {
+                //   // if (!foundUser.isAI) {
+                //   //   foundUser.dataYangDibutuhkan = msg;
+                //   //   // foundUser.isAI = true;
+                //   //   // await kirimPesan(phone, `Baik, terimakasih ${foundUser.namaLengkap}, mohon berkenan menunggu untuk saya carikan datanya ya😁.`);
+                //   //   await kirimPesan(
+                //   //     phone,
+                //   //     `Disclaimer ya ${foundUser.namaLengkap}, karena ${foundUser.namaLengkap} menghubungi diluar jam layanan, maka untuk pelayanan akan dibantu oleh AI, mohon tunggu sebentar sembari saya carikan datanya, terimakasih😁.`
+                //   //   );
+                //   const balasan = `Maaf, silahkan hubungi kami pada jam layanan, yaitu Senin - Jumat pukul 08.00 - 15.30 WITA. Terimakasih🙏🏻`;
+                //   await kirimPesan(phone, balasan);
+                //   deleteDataUser(phone);
+                //   // }
+                // }
               } else {
                 // bisa validasi terkait instansi yang dikirim user
                 foundUser.instansi = msg;
@@ -783,13 +783,13 @@ app.post("/webhook", async (req, res) => {
         } else if (foundUser.layanan == "4") {
           if (foundUser.namaLengkap) {
             if (foundUser.email) {
-              console.log(
-                "4:",
-                phone,
-                foundUser.namaLengkap,
-                foundUser.instansi,
-                foundUser.noTelp,
-              );
+              // console.log(
+              //   "4:",
+              //   phone,
+              //   foundUser.namaLengkap,
+              //   foundUser.instansi,
+              //   foundUser.noTelp,
+              // );
 
               const time = new Date();
               const dbId = await databaseAddDataLayanan(
